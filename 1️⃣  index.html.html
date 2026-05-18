@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marlift - Sistema de OS Mobile</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Bibliotecas externas necessárias para gerar o PDF e ícones -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+</head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <div class="logo-area">
+                <h1>MARLIFT</h1>
+                <span>SISTEMA DE ORDEM DE SERVIÇO</span>
+            </div>
+        </header>
+
+        <main>
+            <!-- FORMULÁRIO DE OS -->
+            <form id="osForm" onsubmit="event.preventDefault();">
+                
+                <!-- SEÇÃO 1: DADOS DO CLIENTE -->
+                <section class="card">
+                    <h2><i class="fa-solid fa-user"></i> 1. Dados do Cliente</h2>
+                    <div class="form-group">
+                        <label>Nome do Cliente / Razão Social</label>
+                        <input type="text" id="cliNome" required placeholder="Ex: Nome da Empresa">
+                    </div>
+                    <div class="form-group">
+                        <label>CNPJ</label>
+                        <input type="text" id="cliCnpj" placeholder="00.000.000/0000-00">
+                    </div>
+                    <div class="form-group">
+                        <label>Endereço Completo</label>
+                        <input type="text" id="cliEndereco" required placeholder="Rua, Número, Bairro, Cidade - UF">
+                        <button type="button" id="btnGps" class="btn-secondary"><i class="fa-solid fa-location-dot"></i> Gerar Rota no GPS</button>
+                    </div>
+                    <div class="row">
+                        <div class="form-group">
+                            <label>Contato Responsável</label>
+                            <input type="text" id="cliContato" placeholder="Ex: João Silveira">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group">
+                            <label>E-mail</label>
+                            <input type="email" id="cliEmail" placeholder="exemplo@email.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Telefone</label>
+                            <input type="tel" id="cliTelefone" placeholder="(11) 99999-9999">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SEÇÃO 2: DADOS DO EQUIPAMENTO -->
+                <section class="card">
+                    <h2><i class="fa-solid fa-truck-pickup"></i> 2. Dados do Equipamento</h2>
+                    <div class="row">
+                        <div class="form-group">
+                            <label>Marca</label>
+                            <input type="text" id="eqMarca" required placeholder="Ex: Clark / Toyota">
+                        </div>
+                        <div class="form-group">
+                            <label>Modelo</label>
+                            <input type="text" id="eqModelo" required placeholder="Ex: CPY25 / 8FFG25">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group">
+                            <label>Tipo de Combustível</label>
+                            <select id="eqCombustivel" required>
+                                <option value="">Selecione...</option>
+                                <option value="GLP">GLP</option>
+                                <option value="Elétrica">Elétrica</option>
+                                <option value="Diesel">Diesel</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Número de Série</label>
+                            <input type="text" id="eqSerie" required placeholder="Ex: E356-0023-9844">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SEÇÃO 3 e 4: DEFEITO E TIPO DE CHAMADO -->
+                <section class="card">
+                    <h2><i class="fa-solid fa-wrench"></i> 3 & 4. Triagem do Chamado</h2>
+                    <div class="form-group">
+                        <label>Tipo do Chamado</label>
+                        <select id="tipoChamado" required>
+                            <option value="">Selecione o tipo...</option>
+                            <option value="Emergencial">Emergencial</option>
+                            <option value="Garantia">Garantia</option>
+                            <option value="Orçamento">Orçamento</option>
+                            <option value="Corretivo">Corretivo</option>
+                            <option value="Preventivo">Preventivo</option>
+                            <option value="Avaliação">Avaliação</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Defeito Apresentado (Poucas palavras)</label>
+                        <input type="text" id="defeitoApresentado" required placeholder="Ex: Motor superaquecendo / Vazamento na torre">
+                    </div>
+                </section>
+
+                <!-- SEÇÃO 5: CRONÔMETRO DE HORAS -->
+                <section class="card">
+                    <h2><i class="fa-solid fa-stopwatch"></i> 5. Tempo de Atendimento</h2>
+                    <div class="cronometro-display">
+                        <span id="cronometroTempo">00:00:00</span>
+                    </div>
+                    <div class="cronometro-actions">
+                        <button type="button" id="btnIniciar" class="btn-start"><i class="fa-solid fa-play"></i> Iniciar</button>
+                        <button type="button" id="btnPausar" class="btn-pause" disabled><i class="fa-solid fa-pause"></i> Pausar</button>
+                    </div>
+                    
+                    <!-- Histórico de Pausas -->
+                    <div id="historicoTempos" class="historico-tempos"></div>
+                </section>
+
+                <!-- SEÇÃO 6, 8 e 9: LAUDO TÉCNICO E PEÇAS -->
+                <section class="card">
+                    <h2><i class="fa-solid fa-clipboard-list"></i> Relatório Técnico</h2>
+                    <div class="form-group">
+                        <label>6. Descrição do Serviço Executado</label>
+                        <textarea id="servicoExecutado" rows="4" placeholder="Descreva detalhadamente o que foi feito..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>8. Peças Aplicadas (Uma por linha)</label>
+                        <textarea id="pecasAplicadas" rows="3" placeholder="Ex: 1x Filtro de Óvel&#10;1x Jogo de Velas"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>9. Observações Gerais</label>
+                        <textarea id="obsGerais" rows="2" placeholder="Notas adicionais importantes..."></textarea>
+                    </div>
+                </section>
+
+                <!-- SEÇÃO 7: EVIDÊNCIAS FOTOGRÁFICAS -->
+                <section class="card">
+                    <h2><i class="fa-solid fa-camera"></i> 7. Evidências Fotográficas (<span id="fotoContador">0</span>/15)</h2>
+                    <div class="upload-area">
+                        <label for="inputFotos" class="btn-upload">
+                            <i class="fa-solid fa-camera-retro"></i> Capturar ou Subir Foto
+                        </label>
+                        <input type="file" id="inputFotos" accept="image/*" capture="environment" multiple style="display:none;">
+                    </div>
+                    <div id="galeriaFotos" class="galeria-fotos"></div>
+                </section>
+
+                <!-- SEÇÃO 10 & 11: ASSINATURA E ENCERRAMENTO -->
+                <section class="card">
+                    <h2><i class="fa-solid fa-signature"></i> 10 & 11. Validação e Encerramento</h2>
+                    
+                    <div class="assinatura-container">
+                        <p>Assinatura do Cliente:</p>
+                        <div id="areaAssinaturaSalva" class="assinatura-salva-box">
+                            <span class="placeholder-text">Nenhuma assinatura salva</span>
+                        </div>
+                        <button type="button" id="btnAbrirAssinatura" class="btn-secondary"><i class="fa-solid fa-pen-nib"></i> Abrir Painel de Assinatura</button>
+                    </div>
+
+                    <div class="acoes-finais">
+                        <button type="button" id="btnFinalizarOS" class="btn-final" disabled><i class="fa-solid fa-lock"></i> Finalizar OS</button>
+                        <button type="button" id="btnGerarPdf" class="btn-pdf" disabled><i class="fa-solid fa-file-pdf"></i> Gerar Relatório PDF</button>
+                    </div>
+                </section>
+
+            </form>
+        </main>
+    </div>
+
+    <!-- POP-UP DA ASSINATURA (MODAL) -->
+    <div id="modalAssinatura" class="modal">
+        <div class="modal-content">
+            <h3>Assine na Tela</h3>
+            <div class="canvas-wrapper">
+                <canvas id="canvasAssinatura"></canvas>
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="btnLimparAssinatura" class="btn-danger">Limpar</button>
+                <button type="button" id="btnSalvarAssinatura" class="btn-success">Salvar Assinatura</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- POP-UP DO MOTIVO DA PAUSA (MODAL) -->
+    <div id="modalPausa" class="modal">
+        <div class="modal-content">
+            <h3>Selecione o Motivo da Pausa</h3>
+            <div class="form-group">
+                <select id="motivoPausaSelect">
+                    <option value="Intervalo de almoço">Intervalo de almoço</option>
+                    <option value="Aguardando peça">Aguardando peça</option>
+                    <option value="Deslocamento até fornecedor">Deslocamento até fornecedor</option>
+                    <option value="Outro">Outro</option>
+                </select>
+            </div>
+            <div class="form-group" id="campoMotivoOutro" style="display:none;">
+                <label>Especifique o motivo:</label>
+                <input type="text" id="motivoPausaOutroInput" placeholder="Digite o motivo...">
+            </div>
+            <button type="button" id="btnConfirmarPausa" class="btn-success">Confirmar Pausa</button>
+        </div>
+    </div>
+
+    <!-- ÁREA OCULTA QUE SERVIRÁ DE MODELO DE IMPRESSÃO DO PDF -->
+    <div id="pdfTemplate" style="display: none;"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

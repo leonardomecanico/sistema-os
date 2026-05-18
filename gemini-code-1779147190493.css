@@ -1,0 +1,335 @@
+/* Identidade Visual Marlift: Laranja (#ff6600), Cinza Escuro (#2c3e50), Fundo Claro (#f8f9fa) */
+:root {
+    --primary: #ff6600;
+    --dark: #2c3e50;
+    --light: #f8f9fa;
+    --gray-border: #bdc3c7;
+    --success: #2ecc71;
+    --danger: #e74c3c;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    background-color: #eef2f5;
+    color: var(--dark);
+    padding: 0;
+}
+
+.app-container {
+    max-width: 600px;
+    margin: 0 auto;
+    background: #fff;
+    min-height: 100vh;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+header {
+    background-color: var(--dark);
+    color: #fff;
+    padding: 15px;
+    text-align: center;
+    border-bottom: 4px solid var(--primary);
+}
+
+header h1 {
+    font-size: 1.6rem;
+    letter-spacing: 2px;
+    color: var(--primary);
+}
+
+header span {
+    font-size: 0.8rem;
+    color: #a0aab2;
+    font-weight: bold;
+}
+
+main {
+    padding: 15px;
+}
+
+.card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.card h2 {
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+    color: var(--dark);
+    border-bottom: 2px solid #edf2f7;
+    padding-bottom: 5px;
+}
+
+.card h2 i {
+    color: var(--primary);
+    margin-right: 5px;
+}
+
+.form-group {
+    margin-bottom: 12px;
+    width: 100%;
+}
+
+.row {
+    display: flex;
+    gap: 10px;
+}
+
+label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #4a5568;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--gray-border);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    background: #fcfcfc;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: var(--primary);
+    outline: none;
+    background: #fff;
+}
+
+button {
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+button:disabled {
+    background-color: #cbd5e1 !important;
+    color: #94a3b8 !important;
+    cursor: not-allowed;
+}
+
+.btn-secondary { background: #475569; color: #fff; width: 100%; margin-top: 5px; }
+.btn-start { background: var(--success); color: #fff; flex: 1; font-size: 1.1rem; }
+.btn-pause { background: #f59e0b; color: #fff; flex: 1; font-size: 1.1rem; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-success { background: var(--success); color: #fff; }
+
+.cronometro-display {
+    background: #1e293b;
+    color: #38bdf8;
+    font-family: monospace;
+    font-size: 2.2rem;
+    text-align: center;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    font-weight: bold;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.cronometro-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.historico-tempos {
+    font-size: 0.85rem;
+    background: #f1f5f9;
+    padding: 8px;
+    border-radius: 4px;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.tempo-linha {
+    padding: 3px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.upload-area { margin-bottom: 10px; }
+.btn-upload {
+    display: flex;
+    background: #f8fafc;
+    border: 2px dashed var(--primary);
+    padding: 15px;
+    border-radius: 6px;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    color: var(--primary);
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.galeria-fotos {
+    display: grid;
+    grid-template-columns: repeat(3, 1px);
+    grid-auto-rows: 1fr;
+    gap: 8px;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.foto-item {
+    position: relative;
+    aspect-ratio: 1;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.foto-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.btn-remover-foto {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: rgba(231, 76, 60, 0.9);
+    color: white;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    font-size: 0.7rem;
+}
+
+.assinatura-container {
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.assinatura-salva-box {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    height: 80px;
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.assinatura-salva-box img {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+.placeholder-text { color: #94a3b8; font-size: 0.85rem; font-style: italic; }
+
+.acoes-finais { display: flex; flex-direction: column; gap: 10px; }
+.btn-final { background: var(--dark); color: #fff; width: 100%; padding: 14px; font-size: 1.1rem; }
+.btn-pdf { background: var(--primary); color: #fff; width: 100%; padding: 14px; font-size: 1.1rem; }
+
+/* MODAIS (POP-UPS) */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.modal-content h3 { margin-bottom: 15px; font-size: 1.1rem; }
+
+.canvas-wrapper {
+    border: 2px solid #94a3b8;
+    background: #fff;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    touch-action: none;
+}
+
+#canvasAssinatura {
+    width: 100%;
+    height: 180px;
+    display: block;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.modal-actions button { flex: 1; }
+
+/* CSS ESPECÍFICO DE FORMATAÇÃO DO RELATÓRIO PDF */
+.pdf-page {
+    padding: 30px;
+    color: #2c3e50;
+    background: white;
+    font-family: Arial, sans-serif;
+}
+.pdf-header {
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 3px solid #ff6600; padding-bottom: 10px; margin-bottom: 20px;
+}
+.pdf-title h1 { color: #2c3e50; font-size: 24px; margin: 0; letter-spacing: 1px; }
+.pdf-title span { font-size: 12px; color: #7f8c8d; font-weight: bold; }
+.pdf-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;
+}
+.pdf-block {
+    border: 1px solid #bdc3c7; border-radius: 4px; padding: 10px; background: #fcfcfc;
+}
+.pdf-block h3 {
+    margin: 0 0 8px 0; font-size: 12px; color: #ff6600; text-transform: uppercase;
+    border-bottom: 1px solid #edf2f7; padding-bottom: 3px;
+}
+.pdf-block p { margin: 4px 0; font-size: 11px; line-height: 1.4; }
+.pdf-full { grid-column: 1 / span 2; }
+.pdf-textarea {
+    white-space: pre-wrap; background: #fff; padding: 6px; border: 1px solid #e2e8f0; min-height: 40px; font-size: 11px;
+}
+.pdf-fotos-container {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 5px;
+}
+.pdf-foto-moldura {
+    border: 1px solid #ddd; padding: 2px; text-align: center; background: white;
+}
+.pdf-foto-moldura img { width: 100%; height: 110px; object-fit: cover; }
+.pdf-footer-signatures {
+    display: flex; justify-content: space-around; margin-top: 40px; text-align: center;
+}
+.pdf-sig-box { border-top: 1px solid #2c3e50; width: 200px; padding-top: 5px; font-size: 11px; }
+.pdf-sig-box img { max-height: 50px; display: block; margin: 0 auto 5px auto; }
