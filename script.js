@@ -489,7 +489,7 @@ document.getElementById('btnSalvarPlanilha').addEventListener('click', function(
     .then(() => {
         alert("CLIENTE SALVO COM SUCESSO!");
         this.disabled = false;
-        this.innerHTML = "SALVAR CLIENTE NA PLANILHA";
+        this.innerHTML = "SALVAR CLIENTE";
         this.style.backgroundColor = "#28a745";
     })
     .catch(err => {
