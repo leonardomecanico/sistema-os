@@ -200,113 +200,27 @@ document.getElementById('btnSalvarAssinatura').addEventListener('click', () => {
     document.getElementById('btnFinalizarOS').disabled = false;
 });
 
-// MONTAGEM E GERAÇÃO DO ARQUIVO PDF (CORRIGIDO)
-document.getElementById('btnGerarPdf').addEventListener('click', () => {
-    const template = document.getElementById('pdfTemplate');
+// --- BOTÃO: FINALIZAR OS ---
+document.getElementById('btnFinalizarOS').addEventListener('click', function() {
+    // 1. Encerra a contagem do cronômetro imediatamente
+    clearInterval(cronometroInterval);
+    statusCronometro = 'finalizado';
     
-    // Mostra o template temporariamente para o script conseguir "ler" o conteúdo
-    template.style.display = 'block';
-
-    const cliNome = document.getElementById('cliNome').value || '-';
-    const cliCnpj = document.getElementById('cliCnpj').value || '-';
-    const cliEndereco = document.getElementById('cliEndereco').value || '-';
-    const cliContato = document.getElementById('cliContato').value || '-';
-    const cliEmail = document.getElementById('cliEmail').value || '-';
-    const cliTelefone = document.getElementById('cliTelefone').value || '-';
+    // 2. Registra o horário do fim no histórico do relatório
+    let horaFim = new Date().toLocaleTimeString('pt-BR');
+    historicoTempos.push({ tipo: 'Finalização Autorizada', hora: horaFim, tempoRef: tempoSegundos });
+    atualizarHistoricoDOM();
     
-    const eqMarca = document.getElementById('eqMarca').value || '-';
-    const eqModelo = document.getElementById('eqModelo').value || '-';
-    const eqCombustivel = document.getElementById('eqCombustivel').value || '-';
-    const eqSerie = document.getElementById('eqSerie').value || '-';
+    // 3. Muda o texto e a cor do próprio botão (Feedback visual no celular)
+    this.innerHTML = `<i class="fa-solid fa-check-double"></i> OS FINALIZADA`;
+    this.style.backgroundColor = "#6c757d"; // Fica cinza (indica que já foi clicado)
+    this.disabled = true; // Trava para não clicar de novo por erro
     
-    const tipoChamado = document.getElementById('tipoChamado').value || '-';
-    const defeito = document.getElementById('defeitoApresentado').value || '-';
-    const servico = document.getElementById('servicoExecutado').value || 'Nenhum laudo preenchido.';
-    const pecas = document.getElementById('pecasAplicadas').value || 'Nenhuma peça aplicada.';
-    const obs = document.getElementById('obsGerais').value || 'Sem observações.';
+    // 4. Ativa o botão de gerar o relatório PDF
+    const btnGerar = document.getElementById('btnGerarPdf');
+    btnGerar.disabled = false; // Libera o botão
+    btnGerar.style.backgroundColor = "#ff6600"; // Fica Laranja Marlift (pronto para usar)
     
-    let logTemposHtml = '';
-    historicoTempos.forEach(t => {
-        logTemposHtml += `<p style="font-size:11px; margin:2px 0;">• <strong>[${t.hora}]</strong> ${t.tipo} - Parcial: ${formatarTempo(t.tempoRef)}</p>`;
-    });
-
-    let fotosHtml = '';
-    fotosArray.forEach(fotoBase64 => {
-        fotosHtml += `<div style="display:inline-block; width:30%; margin:5px;"><img src="${fotoBase64}" style="width:100%; border:1px solid #ddd;"></div>`;
-    });
-    if(fotosArray.length === 0) fotosHtml = '<p style="font-style:italic; font-size:11px;">Nenhuma evidência fotográfica registrada.</p>';
-
-    // Preenche o conteúdo do template
-    template.innerHTML = `
-        <div style="padding: 20px; font-family: Arial, sans-serif; color: #333;">
-            <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #ff6600; padding-bottom: 10px;">
-                <div>
-                    <h1 style="margin: 0; color: #ff6600; font-size: 22px;">MARLIFT EMPILHADEIRAS</h1>
-                    <p style="margin: 0; font-size: 12px; font-weight: bold;">RELATÓRIO DE ATENDIMENTO TÉCNICO</p>
-                </div>
-                <div style="text-align: right; font-size: 11px;">
-                    <p><strong>Emissão:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
-                    <p><strong>Duração Total:</strong> ${formatarTempo(tempoSegundos)}</p>
-                </div>
-            </div>
-
-            <div style="margin-top: 15px; border: 1px solid #ddd; padding: 10px; background: #f9f9f9;">
-                <h3 style="font-size: 14px; margin-top: 0; color: #444;">1. Dados do Cliente</h3>
-                <p style="font-size: 12px; margin: 3px 0;"><strong>Razão Social:</strong> ${cliNome} | <strong>CNPJ:</strong> ${cliCnpj}</p>
-                <p style="font-size: 12px; margin: 3px 0;"><strong>Endereço:</strong> ${cliEndereco}</p>
-                <p style="font-size: 12px; margin: 3px 0;"><strong>Contato:</strong> ${cliContato} | <strong>Tel:</strong> ${cliTelefone}</p>
-            </div>
-
-            <div style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
-                <h3 style="font-size: 14px; margin-top: 0; color: #444;">2. Dados da Máquina</h3>
-                <p style="font-size: 12px; margin: 3px 0;"><strong>Equipamento:</strong> ${eqMarca} ${eqModelo} | <strong>Série:</strong> ${eqSerie}</p>
-                <p style="font-size: 12px; margin: 3px 0;"><strong>Combustível:</strong> ${eqCombustivel}</p>
-            </div>
-
-            <div style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
-                <h3 style="font-size: 14px; margin-top: 0; color: #444;">3. Histórico de Tempos</h3>
-                ${logTemposHtml}
-                <p style="font-size: 12px; font-weight: bold; margin-top: 5px;">Total Faturável: ${formatarTempo(tempoSegundos)}</p>
-            </div>
-
-            <div style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
-                <h3 style="font-size: 14px; margin-top: 0; color: #444;">4. Laudo Técnico / Serviço</h3>
-                <p style="font-size: 12px; white-space: pre-wrap;">${servico}</p>
-            </div>
-
-            <div style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
-                <h3 style="font-size: 14px; margin-top: 0; color: #444;">5. Peças e Observações</h3>
-                <p style="font-size: 12px;"><strong>Peças:</strong> ${pecas}</p>
-                <p style="font-size: 12px;"><strong>Obs:</strong> ${obs}</p>
-            </div>
-
-            <div style="margin-top: 10px;">
-                <h3 style="font-size: 14px; color: #444;">6. Fotos e Evidências</h3>
-                <div style="text-align: center;">${fotosHtml}</div>
-            </div>
-
-            <div style="margin-top: 30px; display: flex; justify-content: space-around; text-align: center;">
-                <div style="width: 45%; border-top: 1px solid #333; padding-top: 5px;">
-                    <p style="font-size: 11px;">Marlift Empilhadeiras</p>
-                </div>
-                <div style="width: 45%; border-top: 1px solid #333; padding-top: 5px;">
-                    <img src="${assinaturaDataUrl}" style="max-height: 60px; display: block; margin: 0 auto;">
-                    <p style="font-size: 11px;">Assinatura do Cliente: ${cliNome}</p>
-                </div>
-            </div>
-        </div>
-    `;
-
-    const opt = {
-        margin: 5,
-        filename: `OS_Marlift_${cliNome.replace(/\s+/g, '_')}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    // Gera o PDF e depois esconde o template novamente
-    html2pdf().set(opt).from(template).save().then(() => {
-        template.style.display = 'none';
-    });
+    // 5. Alerta na tela para você ter certeza absoluta que funcionou
+    alert("Ordem de Serviço encerrada! O botão de Gerar PDF foi ativado.");
 });
