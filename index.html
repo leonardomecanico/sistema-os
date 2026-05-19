@@ -24,43 +24,19 @@
             <form id="osForm" onsubmit="event.preventDefault();">
                 
                 <!-- SEÇÃO 1: DADOS DO CLIENTE -->
-                <section class="card">
-                    <h2><i class="fa-solid fa-user"></i> 1. Dados do Cliente</h2>
-                    <div class="form-group">
-                        <label>Nome do Cliente / Razão Social</label>
-                        <input type="text" id="cliNome" required placeholder="Ex: Nome da Empresa">
-                    </div>
-                    <div class="form-group">
-                        <label>CNPJ</label>
-                        <input type="text" id="cliCnpj" placeholder="00.000.000/0000-00">
-                    </div>
-                    <div class="form-group">
-                        <label>Endereço Completo</label>
-                        <input type="text" id="cliEndereco" required placeholder="Rua, Número, Bairro, Cidade - UF">
-                        <button type="button" id="btnGps" class="btn-secondary"><i class="fa-solid fa-location-dot"></i> Gerar Rota no GPS</button>
-                    </div>
-                    <div class="row">
-                        <div class="form-group">
-                            <label>Contato Responsável</label>
-                            <input type="text" id="cliContato" placeholder="Ex: João Silveira">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="form-group">
-                            <label>E-mail</label>
-                            <input type="email" id="cliEmail" placeholder="exemplo@email.com">
-                        </div>
-                        <div class="form-group">
-                            <label>Telefone</label>
-                            <input type="tel" id="cliTelefone" placeholder="(11) 99999-9999">
-                        </div>
-                    </div>
-                </section><div style="padding: 0 15px;">
-    <button type="button" id="btnSalvarPlanilha" style="width: 100%; padding: 15px; background-color: #28a745; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px; margin-bottom: 20px;">
-        <i class="fa-solid fa-cloud-arrow-up"></i> SALVAR CLIENTE
+              <div class="secao">
+    <h3>Dados do Cliente</h3>
+    <input type="text" id="cliNome" placeholder="Nome do Cliente / Razão Social" list="listaClientes">
+    <datalist id="listaClientes"></datalist> <input type="text" id="cliCnpj" placeholder="CNPJ">
+    <input type="text" id="cliEndereco" placeholder="Endereço Completo">
+    <input type="text" id="cliContato" placeholder="Contato Responsável">
+    <input type="email" id="cliEmail" placeholder="E-mail">
+    <input type="tel" id="cliTelefone" placeholder="Telefone">
+    
+    <button type="button" id="btnSalvarCliente" style="width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; margin-top: 10px;">
+        <i class="fa-solid fa-save"></i> SALVAR CLIENTE
     </button>
 </div>
-
                 <!-- SEÇÃO 2: DADOS DO EQUIPAMENTO -->
                 <section class="card">
                     <h2><i class="fa-solid fa-truck-pickup"></i> 2. Dados do Equipamento</h2>
