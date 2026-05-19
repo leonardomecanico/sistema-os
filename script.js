@@ -413,4 +413,49 @@ document.getElementById('btnGerarPdf').addEventListener('click', () => {
     };
 
     html2pdf().set(opt).from(template.innerHTML).save();
+});// FUNÇÃO PARA SALVAR NOVO CLIENTE NA PLANILHA OS-MARLIFT
+document.getElementById('btnSalvarPlanilha').addEventListener('click', function() {
+    const btn = this;
+    const urlPlanilha = "https://script.google.com/macros/s/AKfycbxR_JT-SRZdFNaWWTudoqU-cXyfDSzel509GnOnc5CF12WGzojsAXC63pvU6qg_oUAo6g/exec";
+    
+    // Captura os dados dos campos do formulário
+    const dadosCliente = {
+        nome: document.getElementById('cliNome').value,
+        cnpj: document.getElementById('cliCnpj').value,
+        endereco: document.getElementById('cliEndereco').value,
+        contato: document.getElementById('cliContato').value,
+        email: document.getElementById('cliEmail').value,
+        telefone: document.getElementById('cliTelefone').value
+    };
+
+    // Validação simples
+    if (!dadosCliente.nome) {
+        alert("Por favor, preencha ao menos o nome do cliente antes de salvar.");
+        return;
+    }
+
+    // Feedback visual de carregamento
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando na Planilha...';
+
+    // Envio dos dados para o Google Apps Script
+    fetch(urlPlanilha, {
+        method: "POST",
+        mode: "no-cors", 
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(dadosCliente)
+    })
+    .then(() => {
+        alert("Sucesso! O cliente foi enviado para a planilha OS-MARLIFT.");
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Salvar Cliente na Planilha';
+    })
+    .catch(err => {
+        console.error("Erro ao salvar:", err);
+        alert("Houve um erro na comunicação com a planilha. Verifique sua internet.");
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Tentar Novamente';
+    });
 });
