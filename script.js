@@ -413,7 +413,7 @@ document.getElementById('btnGerarPdf').addEventListener('click', () => {
     };
 
     html2pdf().set(opt).from(template.innerHTML).save();
-});const URL_API = "SUA_URL_DA_IMPLANTAÇÃO_AQUI";
+});const URL_API = "https://script.google.com/macros/s/AKfycbyMEXY3mmLayq2arquaT5QLHvMaDUQrNNc1X8UqtO4xR4GJJYNVSUuXoPbOEqOwBKBEOg/exec";
 
 // 1. CARREGAR CLIENTES DA PLANILHA AO ABRIR O APP
 window.onload = function() {
