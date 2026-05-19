@@ -3,99 +3,205 @@ let cronometroInterval = null;
 let tempoSegundos = 0;
 let statusCronometro = 'parado'; // parado, rodando, pausado
 let historicoTempos = [];
-let fotosArray = []; // Guarda objetos { original: base64, carimbada: base64 }
+let fotosArray = []; // Guarda as fotos em Base64
 let assinaturaDataUrl = null;
 let geolocalizacaoAtual = "Não capturada";
 
 // Elementos DOM da Assinatura
 const modalAssinatura = document.getElementById('modalAssinatura');
 const canvas = document.getElementById('canvasAssinatura');
-const ctx = canvas.getContext('2d');
+const ctx = canvas ? canvas.getContext('2d') : null;
 let desenhando = false;
 
 // Elementos DOM da Pausa
 const modalPausa = document.getElementById('modalPausa');
 const motivoPausaSelect = document.getElementById('motivoPausaSelect');
-const campoMotivoOutro = document.getElementById('campoMotivoOutro');
-const motivoPausaOutroInput = document.getElementById('motivoPausaOutroInput');
 
-// INICIALIZAÇÃO
+// INICIALIZAÇÃO DO APP E RECUPERAÇÃO DE DADOS
 window.addEventListener('load', () => {
-    configurarCanvasTouch();
+    if (canvas) configurarCanvasTouch();
     capturarCoordenadasGPS();
+    carregarDadosSalvos(); // Recupera tudo se a página recarregar
 });
+
+// FUNÇÃO PARA SALVAR AUTOMATICAMENTE TODOS OS CAMPOS DE TEXTO E SELECTS
+function salvarCamposFormulario() {
+    const campos = [
+        'cliNome', 'cliCnpj', 'cliEndereco', 'cliContato', 'cliEmail', 'cliTelefone',
+        'eqMarca', 'eqModelo', 'eqCombustivel', 'eqSerie', 'servicoExecutado', 'pecasAplicadas'
+    ];
+    campos.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) localStorage.setItem(`marlift_${id}`, el.value);
+    });
+}
+
+// FUNÇÃO PARA SALVAR O ESTADO DO CRONÔMETRO E ARRAYS
+function salvarEstadoEstrutural() {
+    localStorage.setItem('marlift_tempoSegundos', tempoSegundos);
+    localStorage.setItem('marlift_statusCronometro', statusCronometro);
+    localStorage.setItem('marlift_historicoTempos', JSON.stringify(historicoTempos));
+    localStorage.setItem('marlift_fotosArray', JSON.stringify(fotosArray));
+    if (assinaturaDataUrl) localStorage.setItem('marlift_assinaturaDataUrl', assinaturaDataUrl);
+}
+
+// OUVIDORES PARA SALVAR EM TEMPO REAL CONFORME DIGITA
+const idsParaMonitorar = [
+    'cliNome', 'cliCnpj', 'cliEndereco', 'cliContato', 'cliEmail', 'cliTelefone',
+    'eqMarca', 'eqModelo', 'eqCombustivel', 'eqSerie', 'servicoExecutado', 'pecasAplicadas'
+];
+idsParaMonitorar.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+        el.addEventListener('input', salvarCamposFormulario);
+        el.addEventListener('change', salvarCamposFormulario);
+    }
+});
+
+// FUNÇÃO QUE RESTAURA OS DADOS AO RECARREGAR A PÁGINA
+function carregarDadosSalvos() {
+    // 1. Restaura campos de texto
+    idsParaMonitorar.forEach(id => {
+        const el = document.getElementById(id);
+        const valorSalvo = localStorage.getItem(`marlift_${id}`);
+        if (el && valorSalvo) el.value = valorSalvo;
+    });
+
+    // 2. Restaura Histórico e Fotos
+    const historicoSalvo = localStorage.getItem('marlift_historicoTempos');
+    if (historicoSalvo) {
+        historicoTempos = JSON.parse(historicoSalvo);
+        atualizarHistoricoDOM();
+    }
+
+    const fotosSalvas = localStorage.getItem('marlift_fotosArray');
+    if (fotosSalvas) {
+        fotosArray = JSON.parse(fotosSalvas);
+        atualizarGaleriaDOM();
+    }
+
+    const assinaturaSalva = localStorage.getItem('marlift_assinaturaDataUrl');
+    if (assinaturaSalva) {
+        assinaturaDataUrl = assinaturaSalva;
+        const areaAssinaturaSalva = document.getElementById('areaAssinaturaSalva');
+        if (areaAssinaturaSalva) areaAssinaturaSalva.innerHTML = `<img src="${assinaturaDataUrl}" style="max-height:80px;">`;
+    }
+
+    // 3. Restaura o Cronômetro de onde parou
+    const tempoSalvo = localStorage.getItem('marlift_tempoSegundos');
+    if (tempoSalvo) {
+        tempoSegundos = parseInt(tempoSalvo, 10);
+        const displayTempo = document.getElementById('cronometroTempo');
+        if (displayTempo) displayTempo.textContent = formatarTempo(tempoSegundos);
+    }
+
+    const statusSalvo = localStorage.getItem('marlift_statusCronometro');
+    if (statusSalvo) {
+        statusCronometro = statusSalvo;
+        const btnIniciar = document.getElementById('btnIniciar');
+        const btnPausar = document.getElementById('btnPausar');
+        const btnFinalizarOS = document.getElementById('btnFinalizarOS');
+        const btnGerarPdf = document.getElementById('btnGerarPdf');
+
+        if (statusCronometro === 'rodando') {
+            // Se fechou rodando, retoma a contagem automaticamente
+            if (btnIniciar) btnIniciar.disabled = true;
+            if (btnPausar) btnPausar.disabled = false;
+            let tempoInterrupcao = Math.floor((Date.now() - localStorage.getItem('marlift_lastTimestamp')) / 1000);
+            if (!isNaN(tempoInterrupcao) && tempoInterrupcao > 0) {
+                tempoSegundos += tempoInterrupcao; // Soma o tempo que a página ficou fechada
+            }
+            rodarContagemCronometro();
+        } else if (statusCronometro === 'pausado') {
+            if (btnIniciar) btnIniciar.disabled = false;
+            if (btnPausar) btnPausar.disabled = true;
+        } else if (statusCronometro === 'finalizado') {
+            if (btnIniciar) btnIniciar.disabled = true;
+            if (btnPausar) btnPausar.disabled = true;
+            if (btnFinalizarOS) {
+                btnFinalizarOS.innerHTML = `<i class="fa-solid fa-check-double"></i> OS FINALIZADA`;
+                btnFinalizarOS.style.backgroundColor = "#6c757d";
+                btnFinalizarOS.disabled = true;
+            }
+            if (btnGerarPdf) {
+                btnGerarPdf.disabled = false;
+                btnGerarPdf.style.backgroundColor = "#ff6600";
+            }
+        }
+    }
+}
 
 // LINK DE GPS PARA O ENDEREÇO DO CLIENTE
-document.getElementById('btnGps').addEventListener('click', () => {
-    const endereco = document.getElementById('cliEndereco').value;
-    if(!endereco) {
-        alert('Por favor, digite o endereço completo do cliente primeiro.');
-        return;
-    }
-    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`;
-    window.open(url, '_blank');
-});
+const btnGps = document.getElementById('btnGps');
+if (btnGps) {
+    btnGps.addEventListener('click', () => {
+        const endereco = document.getElementById('cliEndereco').value;
+        if(!endereco) {
+            alert('Por favor, digite o endereço completo do cliente primeiro.');
+            return;
+        }
+        const url = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(endereco);
+        window.open(url, '_blank');
+    });
+}
 
-// LOGICA DO CRONÔMETRO (ITEM 5)
-const displayTempo = document.getElementById('cronometroTempo');
+// LOGICA DO CRONÔMETRO
 const btnIniciar = document.getElementById('btnIniciar');
 const btnPausar = document.getElementById('btnPausar');
 const divHistorico = document.getElementById('historicoTempos');
 
-btnIniciar.addEventListener('click', () => {
-    if (statusCronometro === 'parado' || statusCronometro === 'pausado') {
-        statusCronometro = 'rodando';
-        btnIniciar.disabled = true;
-        btnPausar.disabled = false;
+function rodarContagemCronometro() {
+    const displayTempo = document.getElementById('cronometroTempo');
+    cronometroInterval = setInterval(() => {
+        tempoSegundos++;
+        if (displayTempo) displayTempo.textContent = formatarTempo(tempoSegundos);
+        localStorage.setItem('marlift_tempoSegundos', tempoSegundos);
+        localStorage.setItem('marlift_lastTimestamp', Date.now());
+    }, 1000);
+}
+
+if (btnIniciar) {
+    btnIniciar.addEventListener('click', () => {
+        if (statusCronometro === 'parado' || statusCronouter === 'pausado' || statusCronometro === 'pausado') {
+            statusCronometro = 'rodando';
+            btnIniciar.disabled = true;
+            if (btnPausar) btnPausar.disabled = false;
+            
+            let horaInicio = new Date().toLocaleTimeString('pt-BR');
+            historicoTempos.push({ tipo: 'Início/Retomada', hora: horaInicio, tempoRef: tempoSegundos });
+            atualizarHistoricoDOM();
+            salvarEstadoEstrutural();
+
+            rodarContagemCronometro();
+        }
+    });
+}
+
+if (btnPausar) {
+    btnPausar.addEventListener('click', () => {
+        if (statusCronometro === 'rodando' && modalPausa) {
+            modalPausa.style.display = 'flex';
+        }
+    });
+}
+
+const btnConfirmarPausa = document.getElementById('btnConfirmarPausa');
+if (btnConfirmarPausa) {
+    btnConfirmarPausa.addEventListener('click', () => {
+        clearInterval(cronometroInterval);
+        statusCronometro = 'pausado';
         
-        let horaInicio = new Date().toLocaleTimeString('pt-BR');
-        historicoTempos.push({ tipo: 'Início/Retomada', hora: horaInicio, tempoRef: tempoSegundos });
+        let motivo = motivoPausaSelect ? motivoPausaSelect.value : 'Intervalo';
+        let horaPausa = new Date().toLocaleTimeString('pt-BR');
+        historicoTempos.push({ tipo: `Pausa (${motivo})`, hora: horaPausa, tempoRef: tempoSegundos });
+        
+        if (modalPausa) modalPausa.style.display = 'none';
+        if (btnIniciar) btnIniciar.disabled = false;
+        if (btnPausar) btnPausar.disabled = true;
         atualizarHistoricoDOM();
-
-        cronometroInterval = setInterval(() => {
-            tempoSegundos++;
-            displayTempo.textContent = formatarTempo(tempoSegundos);
-        }, 1000);
-    }
-});
-
-btnPausar.addEventListener('click', () => {
-    if (statusCronmetro === 'rodando') {
-        // Abre pop-up para selecionar motivo da pausa
-        modalPausa.style.display = 'flex';
-    }
-});
-
-motivoPausaSelect.addEventListener('change', () => {
-    if (motivoPausaSelect.value === 'Outro') {
-        campoMotivoOutro.style.display = 'block';
-    } else {
-        campoMotivoOutro.style.display = 'none';
-    }
-});
-
-document.getElementById('btnConfirmarPausa').addEventListener('click', () => {
-    clearInterval(cronometroInterval);
-    statusCronometro = 'pausado';
-    
-    let motivo = motivoPausaSelect.value;
-    if (motivo === 'Outro') {
-        motivo = motivoPausaOutroInput.value || 'Outro motivo não especificado';
-    }
-
-    let horaPausa = new Date().toLocaleTimeString('pt-BR');
-    historicoTempos.push({ tipo: `Pausa (${motivo})`, hora: horaPausa, tempoRef: tempoSegundos });
-    
-    // Reseta campos do modal de pausa e fecha
-    modalPausa.style.display = 'none';
-    campoMotivoOutro.style.display = 'none';
-    motivoPausaOutroInput.value = '';
-    motivoPausaSelect.value = 'Intervalo de almoço';
-
-    btnIniciar.disabled = false;
-    btnPausar.disabled = true;
-    atualizarHistoricoDOM();
-});
+        salvarEstadoEstrutural();
+    });
+}
 
 function formatarTempo(totalSegundos) {
     let horas = Math.floor(totalSegundos / 3600);
@@ -105,6 +211,7 @@ function formatarTempo(totalSegundos) {
 }
 
 function atualizarHistoricoDOM() {
+    if (!divHistorico) return;
     divHistorico.innerHTML = '';
     historicoTempos.forEach(item => {
         const p = document.createElement('div');
@@ -114,52 +221,41 @@ function atualizarHistoricoDOM() {
     });
 }
 
-// CAPTURA DE GPS DE RECOVERY DE COORDENADAS PARA O CARIMBO
+// CAPTURA DE GPS
 function capturarCoordenadasGPS() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition((position) => {
             geolocalizacaoAtual = `Lat: ${position.coords.latitude.toFixed(5)}, Long: ${position.coords.longitude.toFixed(5)}`;
         }, () => {
-            geolocalizacaoAtual = "GPS Indisponível/Negado";
+            geolocalizacaoAtual = "GPS Indisponível";
         }, { enableHighAccuracy: true });
     }
 }
 
-// GERENCIAMENTO DE EVIDÊNCIAS FOTOGRÁFICAS COM CARIMBO AUTOMÁTICO (ITEM 7)
-document.getElementById('inputFotos').addEventListener('change', function(e) {
-    const arquivos = Array.from(e.target.files);
-    
-    arquivos.forEach(arquivo => {
-        if (fotosArray.length >= 15) return;
-
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const imgObj = new Image();
-            imgObj.onload = function() {
-                // Força captura de coordenadas atualizada no momento do upload
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition((position) => {
-                        geolocalizacaoAtual = `Lat: ${position.coords.latitude.toFixed(5)}, Long: ${position.coords.longitude.toFixed(5)}`;
-                        processarECarimbarImagem(imgObj);
-                    }, () => {
-                        processarECarimbarImagem(imgObj);
-                    });
-                } else {
+// GERENCIAMENTO DE FOTOS COM CARIMBO
+const inputFotos = document.getElementById('inputFotos');
+if (inputFotos) {
+    inputFotos.addEventListener('change', function(e) {
+        const arquivos = Array.from(e.target.files);
+        arquivos.forEach(arquivo => {
+            if (fotosArray.length >= 15) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const imgObj = new Image();
+                imgObj.onload = function() {
                     processarECarimbarImagem(imgObj);
-                }
+                };
+                imgObj.src = event.target.result;
             };
-            imgObj.src = event.target.result;
-        };
-        reader.readAsDataURL(arquivo);
+            reader.readAsDataURL(arquivo);
+        });
+        this.value = ''; 
     });
-    this.value = ''; // Libera input para re-upload se necessário
-});
+}
 
 function processarECarimbarImagem(imgObj) {
     const canvasFoto = document.createElement('canvas');
     const ctxFoto = canvasFoto.getContext('2d');
-    
-    // Define tamanho máximo para evitar lentidão e estourar armazenamento
     const maxDim = 1024;
     let w = imgObj.width;
     let h = imgObj.height;
@@ -167,61 +263,65 @@ function processarECarimbarImagem(imgObj) {
         if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
         else { w = Math.round((w * maxDim) / h); h = maxDim; }
     }
-    
     canvasFoto.width = w;
     canvasFoto.height = h;
     ctxFoto.drawImage(imgObj, 0, 0, w, h);
     
-    // Configuração do carimbo no rodapé
     const dataHoraStr = `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`;
     const textoCarimbo = `MARLIFT | ${dataHoraStr} | GPS: ${geolocalizacaoAtual}`;
-    
     const alturaFaixa = Math.round(h * 0.05) < 30 ? 30 : Math.round(h * 0.05);
-    ctxFoto.fillStyle = "rgba(44, 62, 80, 0.75)"; // Cinza escuro semi-transparente
-    ctxFoto.fillRect(0, h - alturaFaixa, w, alturaFaixa);
     
-    ctxFoto.fillStyle = "#ff6600"; // Texto Laranja Marlift
+    ctxFoto.fillStyle = "rgba(44, 62, 80, 0.75)"; 
+    ctxFoto.fillRect(0, h - alturaFaixa, w, alturaFaixa);
+    ctxFoto.fillStyle = "#ff6600"; 
     ctxFoto.font = `bold ${Math.round(alturaFaixa * 0.45)}px Arial`;
     ctxFoto.textBaseline = "middle";
     ctxFoto.fillText(textoCarimbo, 15, h - (alturaFaixa / 2));
     
-    const fotoCarimbadaBase64 = canvasFoto.toDataURL('image/jpeg', 0.8);
-    fotosArray.push(fotoCarimbadaBase64);
-    
+    fotosArray.push(canvasFoto.toDataURL('image/jpeg', 0.8));
     atualizarGaleriaDOM();
+    salvarEstadoEstrutural();
 }
 
 function atualizarGaleriaDOM() {
     const galeria = document.getElementById('galeriaFotos');
-    galeria.innerHTML = '';
-    document.getElementById('fotoContador').textContent = fotosArray.length;
+    const fotoContador = document.getElementById('fotoContador');
+    if (galeria) galeria.innerHTML = '';
+    if (fotoContador) fotoContador.textContent = fotosArray.length;
     
-    fotosArray.forEach((foto, index) => {
-        const div = document.createElement('div');
-        div.className = 'foto-item';
-        div.innerHTML = `
-            <img src="${foto}">
-            <button type="button" class="btn-remover-foto" onclick="removerFoto(${index})">X</button>
-        `;
-        galeria.appendChild(div);
-    });
+    if (galeria) {
+        fotosArray.forEach((foto, index) => {
+            const div = document.createElement('div');
+            div.className = 'foto-item';
+            div.innerHTML = `
+                <img src="${foto}" style="width:100px; margin:5px; border-radius:4px;">
+                <button type="button" class="btn-remover-foto" onclick="removerFoto(${index})">X</button>
+            `;
+            galeria.appendChild(div);
+        });
+    }
 }
 
 window.removerFoto = function(index) {
     fotosArray.splice(index, 1);
     atualizarGaleriaDOM();
+    salvarEstadoEstrutural();
 };
 
-// CONTROLE DO PAINEL DE ASSINATURA (ITEM 10)
+// CONTROLE DO PAINEL DE ASSINATURA
 const btnAbrirAssinatura = document.getElementById('btnAbrirAssinatura');
-btnAbrirAssinatura.addEventListener('click', () => {
-    modalAssinatura.style.display = 'flex';
-    redimensionarCanvasAssinatura();
-});
+if (btnAbrirAssinatura) {
+    btnAbrirAssinatura.addEventListener('click', () => {
+        if (modalAssinatura) {
+            modalAssinatura.style.display = 'flex';
+            redimensionarCanvasAssinatura();
+        }
+    });
+}
 
 function redimensionarCanvasAssinatura() {
-    // Sincroniza tamanho interno do canvas com elemento CSS real
-    canvas.width = canvas.parentElement.clientWidth;
+    if (!canvas) return;
+    canvas.width = canvas.parentElement.clientWidth || 300;
     canvas.height = 180;
     ctx.lineWidth = 3;
     ctx.lineCap = 'round';
@@ -229,7 +329,7 @@ function redimensionarCanvasAssinatura() {
 }
 
 function configurarCanvasTouch() {
-    const obterPosicaoMouseTouch = (e) => {
+    const obtenerPosicaoMouseTouch = (e) => {
         const rect = canvas.getBoundingClientRect();
         const clienteX = e.touches ? e.touches[0].clientX : e.clientX;
         const clienteY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -238,18 +338,18 @@ function configurarCanvasTouch() {
 
     const iniciarDesenho = (e) => {
         desenhando = true;
-        const pos = obterPosicaoMouseTouch(e);
+        const pos = obtenerPosicaoMouseTouch(e);
         ctx.beginPath();
         ctx.moveTo(pos.x, pos.y);
-        e.preventDefault();
+        if(e.touches) e.preventDefault();
     };
 
     const desenhar = (e) => {
         if (!desenhando) return;
-        const pos = obterPosicaoMouseTouch(e);
+        const pos = obtenerPosicaoMouseTouch(e);
         ctx.lineTo(pos.x, pos.y);
         ctx.stroke();
-        e.preventDefault();
+        if(e.touches) e.preventDefault();
     };
 
     const pararDesenho = () => { desenhando = false; };
@@ -263,178 +363,186 @@ function configurarCanvasTouch() {
     canvas.addEventListener('touchend', pararDesenho);
 }
 
-document.getElementById('btnLimparAssinatura').addEventListener('click', () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-});
-
-document.getElementById('btnSalvarAssinatura').addEventListener('click', () => {
-    // Valida se o canvas não está em branco
-    const canvasVazio = document.createElement('canvas');
-    canvasVazio.width = canvas.width; canvasVazio.height = canvas.height;
-    if(canvas.toDataURL() === canvasVazio.toDataURL()) {
-        alert("Por favor, colete a assinatura antes de salvar.");
-        return;
-    }
-
-    assinaturaDataUrl = canvas.toDataURL();
-    document.getElementById('areaAssinaturaSalva').innerHTML = `<img src="${assinaturaDataUrl}">`;
-    modalAssinatura.style.display = 'none';
-    
-    // Habilita liberação da trava de encerramento do cronômetro
-    document.getElementById('btnFinalizarOS').disabled = false;
-    document.getElementById('btnFinalizarOS').innerHTML = `<i class="fa-solid fa-stop"></i> Finalizar Contagem e Fechar OS`;
-});
-
-// FINALIZAÇÃO COMPLETA DA ORDEM DE SERVIÇO
-document.getElementById('btnFinalizarOS').addEventListener('click', function() {
-    clearInterval(cronometroInterval);
-    statusCronometro = 'finalizado';
-    
-    let horaFim = new Date().toLocaleTimeString('pt-BR');
-    historicoTempos.push({ tipo: 'Finalização Autorizada', hora: horaFim, tempoRef: tempoSegundos });
-    atualizarHistoricoDOM();
-    
-    this.disabled = true;
-    btnIniciar.disabled = true;
-    btnPausar.disabled = true;
-    this.innerHTML = `<i class="fa-solid fa-check-double"></i> OS Finalizada com Sucesso`;
-    
-    // Libera botão do PDF
-    document.getElementById('btnGerarPdf').disabled = false;
-});
-
-// MONTAGEM DO LAYOUT DO PDF (ITEM 11)
-document.getElementById('btnGerarPdf').addEventListener('click', () => {
-    const template = document.getElementById('pdfTemplate');
-    
-    // Captura valores dos inputs
-    const cliNome = document.getElementById('cliNome').value || '-';
-    const cliCnpj = document.getElementById('cliCnpj').value || '-';
-    const cliEndereco = document.getElementById('cliEndereco').value || '-';
-    const cliContato = document.getElementById('cliContato').value || '-';
-    const cliEmail = document.getElementById('cliEmail').value || '-';
-    const cliTelefone = document.getElementById('cliTelefone').value || '-';
-    
-    const eqMarca = document.getElementById('eqMarca').value || '-';
-    const eqModelo = document.getElementById('eqModelo').value || '-';
-    const eqCombustivel = document.getElementById('eqCombustivel').value || '-';
-    const eqSerie = document.getElementById('eqSerie').value || '-';
-    
-    const tipoChamado = document.getElementById('tipoChamado').value || '-';
-    const defeito = document.getElementById('defeitoApresentado').value || '-';
-    const servico = document.getElementById('servicoExecutado').value || 'Nenhum laudo preenchido.';
-    const pecas = document.getElementById('pecasAplicadas').value || 'Nenhuma peça aplicada.';
-    const obs = document.getElementById('obsGerais').value || 'Sem observações.';
-    
-    // Gera linhas do histórico de tempo para o relatório
-    let logTemposHtml = '';
-    historicoTempos.forEach(t => {
-        logTemposHtml += `<p>• <strong>[${t.hour || t.hora}]</strong> ${t.tipo} - Parcial: ${formatarTempo(t.tempoRef)}</p>`;
+const btnLimparAssinatura = document.getElementById('btnLimparAssinatura');
+if (btnLimparAssinatura) {
+    btnLimparAssinatura.addEventListener('click', () => {
+        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     });
+}
 
-    // Estrutura fotos no PDF
-    let fotosHtml = '';
-    fotosArray.forEach(fotoBase64 => {
-        fotosHtml += `<div class="pdf-foto-moldura"><img src="${fotoBase64}"></div>`;
+const btnSalvarAssinatura = document.getElementById('btnSalvarAssinatura');
+if (btnSalvarAssinatura) {
+    btnSalvarAssinatura.addEventListener('click', () => {
+        if (!canvas) return;
+        assinaturaDataUrl = canvas.toDataURL();
+        const areaAssinaturaSalva = document.getElementById('areaAssinaturaSalva');
+        if (areaAssinaturaSalva) areaAssinaturaSalva.innerHTML = `<img src="${assinaturaDataUrl}" style="max-height:80px;">`;
+        if (modalAssinatura) modalAssinatura.style.display = 'none';
+        
+        const btnFinalizarOS = document.getElementById('btnFinalizarOS');
+        if (btnFinalizarOS) btnFinalizarOS.disabled = false;
+        salvarEstadoEstrutural();
     });
-    if(fotosArray.length === 0) fotosHtml = '<p style="font-style:italic; font-size:11px;">Nenhuma evidência fotográfica registrada.</p>';
+}
 
-    // Injeta o HTML completo formatado dentro do container oculto
-    template.innerHTML = `
-        <div class="pdf-page">
-            <div class="pdf-header">
-                <div class="pdf-title">
-                    <h1>MARLIFT EMPILHADEIRAS</h1>
-                    <span>RELATÓRIO DE ATENDIMENTO TÉCNICO</span>
-                </div>
-                <div style="text-align: right; font-size: 11px;">
-                    <p><strong>Emissão:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
-                    <p><strong>Duração Total:</strong> ${formatarTempo(tempoSegundos)}</p>
-                </div>
-            </div>
+// FINALIZAÇÃO COMPLETA DA ORDEM DE SERVIÇO (LIMPA O CACHE APÓS CONCLUIR)
+const btnFinalizarOS = document.getElementById('btnFinalizarOS');
+if (btnFinalizarOS) {
+    btnFinalizarOS.addEventListener('click', function() {
+        clearInterval(cronometroInterval);
+        statusCronometro = 'finalizado';
+        
+        let horaFim = new Date().toLocaleTimeString('pt-BR');
+        historicoTempos.push({ tipo: 'Finalização Autorizada', hora: horaFim, tempoRef: tempoSegundos });
+        atualizarHistoricoDOM();
+        
+        this.innerHTML = `<i class="fa-solid fa-check-double"></i> OS FINALIZADA`;
+        this.style.backgroundColor = "#6c757d";
+        this.disabled = true;
+        
+        const btnGerarPdf = document.getElementById('btnGerarPdf');
+        if (btnGerarPdf) {
+            btnGerarPdf.disabled = false;
+            btnGerarPdf.style.backgroundColor = "#ff6600";
+        }
+        salvarEstadoEstrutural();
+        alert("Ordem de Serviço finalizada com sucesso! O relatório PDF foi liberado.");
+    });
+}
 
-            <div class="pdf-grid">
-                <!-- CLIENTE -->
-                <div class="pdf-block pdf-full">
-                    <h3>1. Dados do Cliente</h3>
-                    <p><strong>Razão Social:</strong> ${cliNome} | <strong>CNPJ:</strong> ${cliCnpj}</p>
-                    <p><strong>Endereço:</strong> ${cliEndereco}</p>
-                    <p><strong>Contato:</strong> ${cliContato} | <strong>Tel:</strong> ${cliTelefone} | <strong>E-mail:</strong> ${cliEmail}</p>
+// FUNÇÃO PARA LIMPAR O BANCO DE DADOS LOCAL APÓS GERAR O PDF (PARA A PRÓXIMA OS VIR EM BRANCO)
+function limparCacheOS() {
+    const chaves = [
+        'marlift_tempoSegundos', 'marlift_statusCronometro', 'marlift_historicoTempos', 
+        'marlift_fotosArray', 'marlift_assinaturaDataUrl', 'marlift_lastTimestamp',
+        'marlift_cliNome', 'marlift_cliCnpj', 'marlift_cliEndereco', 'marlift_cliContato', 
+        'marlift_cliEmail', 'marlift_cliTelefone', 'marlift_eqMarca', 'marlift_eqModelo', 
+        'marlift_eqCombustivel', 'marlift_eqSerie', 'marlift_servicoExecutado', 'marlift_pecasAplicadas'
+    ];
+    chaves.forEach(chave => localStorage.removeItem(chave));
+}
+
+// MONTAGEM E GERAÇÃO DO ARQUIVO PDF
+const btnGerarPdf = document.getElementById('btnGerarPdf');
+if (btnGerarPdf) {
+    btnGerarPdf.addEventListener('click', () => {
+        const template = document.getElementById('pdfTemplate');
+        if (!template) {
+            alert("Erro: O local de montagem do PDF (pdfTemplate) não existe no HTML.");
+            return;
+        }
+        
+        template.style.display = 'block';
+
+        const pegarValor = (id) => {
+            const el = document.getElementById(id);
+            return el ? el.value : '-';
+        };
+
+        const dados = {
+            cliente: pegarValor('cliNome'),
+            cnpj: pegarValor('cliCnpj'),
+            end: pegarValor('cliEndereco'),
+            contato: pegarValor('cliContato'),
+            email: pegarValor('cliEmail'),
+            tel: pegarValor('cliTelefone'),
+            marca: pegarValor('eqMarca'),
+            modelo: pegarValor('eqModelo'),
+            comb: pegarValor('eqCombustivel'),
+            serie: pegarValor('eqSerie'),
+            servico: pegarValor('servicoExecutado') !== '' ? pegarValor('servicoExecutado') : 'Laudo técnico não preenchido.',
+            pecas: pegarValor('pecasAplicadas') !== '' ? pegarValor('pecasAplicadas') : 'Nenhuma peça aplicada.'
+        };
+
+        let logTemposHtml = historicoTempos.map(t => 
+            `<p style="font-size:11px; margin:2px 0;">• <strong>[${t.hora}]</strong> ${t.tipo} - Parcial: ${formatarTempo(t.tempoRef)}</p>`
+        ).join('');
+
+        let fotosHtml = fotosArray.map(foto => 
+            `<div style="display:inline-block; width:30%; margin:5px;"><img src="${foto}" style="width:100%; border:1px solid #ddd; border-radius:4px;"></div>`
+        ).join('');
+        if(fotosArray.length === 0) fotosHtml = '<p style="font-style:italic; font-size:11px;">Nenhuma evidência fotográfica registrada.</p>';
+
+        template.innerHTML = `
+            <div style="padding: 20px; font-family: Arial, sans-serif; color: #333; background: #fff;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #ff6600; padding-bottom: 10px;">
+                    <div>
+                        <h1 style="margin: 0; color: #ff6600; font-size: 22px;">MARLIFT EMPILHADEIRAS</h1>
+                        <p style="margin: 0; font-size: 12px; font-weight: bold;">RELATÓRIO DE ATENDIMENTO TÉCNICO</p>
+                    </div>
+                    <div style="text-align: right; font-size: 11px;">
+                        <p><strong>Emissão:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
+                        <p><strong>Duração Total:</strong> ${formatarTempo(tempoSegundos)}</p>
+                    </div>
                 </div>
 
-                <!-- EQUIPAMENTO -->
-                <div class="pdf-block">
-                    <h3>2. Dados da Empilhadeira</h3>
-                    <p><strong>Marca / Modelo:</strong> ${eqMarca} ${eqModelo}</p>
-                    <p><strong>Combustível:</strong> ${eqCombustivel}</p>
-                    <p><strong>Nº de Série:</strong> ${eqSerie}</p>
+                <div style="margin-top: 15px; border: 1px solid #ddd; padding: 10px; background: #f9f9f9;">
+                    <h3 style="font-size: 14px; margin-top: 0; color: #ff6600;">1. Dados do Cliente</h3>
+                    <p style="font-size: 12px; margin: 3px 0;"><strong>Razão Social:</strong> ${dados.cliente} | <strong>CNPJ:</strong> ${dados.cnpj}</p>
+                    <p style="font-size: 12px; margin: 3px 0;"><strong>Endereço:</strong> ${dados.end}</p>
+                    <p style="font-size: 12px; margin: 3px 0;"><strong>Contato:</strong> ${dados.contato} | <strong>Tel:</strong> ${dados.tel}</p>
                 </div>
 
-                <!-- TRIAGEM -->
-                <div class="pdf-block">
-                    <h3>3 & 4. Informações do Chamado</h3>
-                    <p><strong>Tipo de Atendimento:</strong> ${tipoChamado}</p>
-                    <p><strong>Defeito Relatado:</strong> ${defeito}</p>
+                <div style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
+                    <h3 style="font-size: 14px; margin-top: 0; color: #ff6600;">2. Dados do Equipamento</h3>
+                    <p style="font-size: 12px; margin: 3px 0;"><strong>Equipamento:</strong> ${dados.marca} ${dados.modelo} (${dados.comb}) | <strong>Série:</strong> ${dados.serie}</p>
                 </div>
 
-                <!-- CRONOMETRO -->
-                <div class="pdf-block pdf-full">
-                    <h3>5. Histórico Detalhado dos Tempos (Mapeamento de Horas)</h3>
+                <div style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
+                    <h3 style="font-size: 14px; margin-top: 0; color: #ff6600;">3. Histórico de Horas Mão de Obra</h3>
                     ${logTemposHtml}
-                    <p style="margin-top:5px; font-weight:bold; border-top:1px dashed #ddd; padding-top:4px;">Tempo de Mão de Obra Faturável: ${formatarTempo(tempoSegundos)}</p>
+                    <p style="font-size: 12px; font-weight: bold; margin-top: 5px; border-top: 1px dashed #ddd; padding-top:4px;">Tempo Faturável: ${formatarTempo(tempoSegundos)}</p>
                 </div>
 
-                <!-- LAUDO -->
-                <div class="pdf-block pdf-full">
-                    <h3>6. Descrição do Serviço Executado</h3>
-                    <div class="pdf-textarea">${servico}</div>
+                <div style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
+                    <h3 style="font-size: 14px; margin-top: 0; color: #ff6600;">4. Laudo Técnico / Serviço Executado</h3>
+                    <p style="font-size: 12px; white-space: pre-wrap;">${dados.servico}</p>
                 </div>
 
-                <!-- PEÇAS -->
-                <div class="pdf-block pdf-full">
-                    <h3>8. Peças Aplicadas</h3>
-                    <div class="pdf-textarea">${pecas}</div>
+                <div style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
+                    <h3 style="font-size: 14px; margin-top: 0; color: #ff6600;">5. Peças Aplicadas</h3>
+                    <p style="font-size: 12px; white-space: pre-wrap;">${dados.pecas}</p>
                 </div>
 
-                <!-- OBS -->
-                <div class="pdf-block pdf-full">
-                    <h3>9. Observações Gerais</h3>
-                    <div class="pdf-textarea">${obs}</div>
+                <div style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
+                    <h3 style="font-size: 14px; margin-top: 0; color: #ff6600;">6. Evidências Fotográficas</h3>
+                    <div style="text-align: center;">${fotosHtml}</div>
                 </div>
 
-                <!-- FOTOS -->
-                <div class="pdf-block pdf-full">
-                    <h3>7. Evidências Fotográficas Carimbadas (Geolocalização / Data / Hora)</h3>
-                    <div class="pdf-images-container pdf-fotos-container">
-                        ${fotosHtml}
+                <div style="margin-top: 40px; display: flex; justify-content: space-around; text-align: center;">
+                    <div style="width: 45%; border-top: 1px solid #333; padding-top: 5px;">
+                        <p style="font-size: 11px; font-weight:bold;">MARLIFT EMPILHADEIRAS</p>
+                        <p style="font-size: 10px; color:#555;">Técnico Responsável</p>
+                    </div>
+                    <div style="width: 45%; border-top: 1px solid #333; padding-top: 5px;">
+                        ${assinaturaDataUrl ? `<img src="${assinaturaDataUrl}" style="max-height: 50px; display: block; margin: 0 auto;">` : '<div style="height:50px;"></div>'}
+                        <p style="font-size: 11px; font-weight:bold;">${dados.cliente}</p>
+                        <p style="font-size: 10px; color:#555;">Assinatura do Cliente</p>
                     </div>
                 </div>
             </div>
+        `;
 
-            <!-- ASSINATURAS -->
-            <div class="pdf-footer-signatures">
-                <div class="pdf-sig-box">
-                    <p>Técnico Responsável</p>
-                    <p style="margin-top:15px; font-weight:bold;">MARLIFT EMPILHADEIRAS</p>
-                </div>
-                <div class="pdf-sig-box">
-                    <img src="${assinaturaDataUrl}">
-                    <p>Carimbo / Assinatura do Cliente</p>
-                    <p style="font-weight:bold;">${cliNome}</p>
-                </div>
-            </div>
-        </div>
-    `;
+        const opt = {
+            margin: 5,
+            filename: `OS_Marlift_${dados.cliente.replace(/\s+/g, '_')}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
 
-    // Configuração do html2pdf para gerar folha A4 perfeita sem quebras erradas
-    const opt = {
-        margin: 0,
-        filename: `OS_Marlift_${cliNome.replace(/\s+/g, '_')}_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    // Executa e faz o download direto no dispositivo
-    html2pdf().set(opt).from(template.innerHTML).save();
-});
+        if (typeof html2pdf !== 'undefined') {
+            html2pdf().set(opt).from(template).save().then(() => {
+                template.style.display = 'none';
+                limparCacheOS(); // Limpa a memória para a próxima OS vir em branco
+                setTimeout(() => { location.reload(); }, 1500); // Dá um refresh automático
+            }).catch(err => {
+                alert("Erro ao processar PDF: " + err);
+                template.style.display = 'none';
+            });
+        } else {
+            alert("Biblioteca de PDF não carregada no HTML.");
+            template.style.display = 'none';
+        }
+    });
+}
