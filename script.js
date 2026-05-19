@@ -34,18 +34,27 @@ function obterHoraAtual() {
 }
 
 // ==========================================
-// 1. BANCO DE CLIENTES OFFLINE
+// ==========================================
+// 1. BANCO DE CLIENTES OFFLINE - CORRIGIDO
 // ==========================================
 function inicializarGerenciadorClientes() {
+    // Carrega do LocalStorage garantindo que venha como um array limpo se não existir nada
     const clientesSalvos = localStorage.getItem('marlift_banco_clientes');
-    if (clientesSalvos) bancoClientes = JSON.parse(clientesSalvos);
+    if (clientesSalvos) {
+        bancoClientes = JSON.parse(clientesSalvos);
+    } else {
+        bancoClientes = [];
+    }
 
+    // Alimenta o select logo que a página abre
     atualizarSelectClientes();
 
+    // Evento de seleção do cliente no menu suspenso
     document.getElementById('buscaCliente').addEventListener('change', (e) => {
-        const id = e.target.value;
-        if (!id) return;
-        const cli = bancoClientes.find(c => c.id === id);
+        const idSelected = e.target.value;
+        if (!idSelected) return;
+        
+        const cli = bancoClientes.find(c => c.id === idSelected);
         if (cli) {
             document.getElementById('cliNome').value = cli.nome || '';
             document.getElementById('cliCnpj').value = cli.cnpj || '';
@@ -57,49 +66,63 @@ function inicializarGerenciadorClientes() {
             document.getElementById('eqModelo').value = cli.modelo || '';
             document.getElementById('eqCombustivel').value = cli.combustivel || '';
             document.getElementById('eqSerie').value = cli.serie || '';
+            
+            // Força salvar o rascunho da OS atual com os dados novos
             salvarDadosLocalStorage();
+            alert(`Dados de ${cli.nome} carregados com sucesso!`);
         }
     });
 
-    document.getElementById('btnSalvarNovoCliente').addEventListener('click', () => {
-        const nome = document.getElementById('cadCliNome').value.trim();
-        const endereco = document.getElementById('cadCliEndereco').value.trim();
-        const marca = document.getElementById('cadEqMarca').value.trim();
-        const modelo = document.getElementById('cadEqModelo').value.trim();
-        const serie = document.getElementById('cadEqSerie').value.trim();
+    // CORREÇÃO CRÍTICA: Captura correta do clique do botão salvar
+    const btnSalvar = document.getElementById('btnSalvarNovoCliente');
+    if (btnSalvar) {
+        btnSalvar.onclick = function() {
+            const nome = document.getElementById('cadCliNome').value.trim();
+            const endereco = document.getElementById('cadCliEndereco').value.trim();
+            const marca = document.getElementById('cadEqMarca').value.trim();
+            const modelo = document.getElementById('cadEqModelo').value.trim();
+            const serie = document.getElementById('cadEqSerie').value.trim();
 
-        if (!nome || !endereco || !marca || !modelo || !serie) {
-            alert("Preencha todos os campos obrigatórios (*)"); return;
-        }
+            // Validação de campos obrigatórios
+            if (!nome || !endereco || !marca || !modelo || !serie) {
+                alert("Por favor, preencha todos os campos obrigatórios marcados com (*)");
+                return;
+            }
 
-        const novo = {
-            id: Date.now().toString(),
-            nome, cnpj: document.getElementById('cadCliCnpj').value, endereco,
-            contato: document.getElementById('cadCliContato').value,
-            email: document.getElementById('cadCliEmail').value,
-            telefone: document.getElementById('cadCliTelefone').value,
-            marca, modelo, combustivel: document.getElementById('cadEqCombustivel').value, serie
+            // Monta o objeto com os IDs corretos do HTML
+            const novoCliente = {
+                id: Date.now().toString(), // ID Único
+                nome: nome,
+                cnpj: document.getElementById('cadCliCnpj').value.trim(),
+                endereco: endereco,
+                contato: document.getElementById('cadCliContato').value.trim(),
+                email: document.getElementById('cadCliEmail').value.trim(),
+                telefone: document.getElementById('cadCliTelefone').value.trim(),
+                marca: marca,
+                modelo: modelo,
+                combustivel: document.getElementById('cadEqCombustivel').value,
+                serie: serie
+            };
+
+            // Adiciona no array global
+            bancoClientes.push(novoCliente);
+            
+            // Grava de forma definitiva no navegador
+            localStorage.setItem('marlift_banco_clientes', JSON.stringify(bancoClientes));
+            
+            // Atualiza o menu de busca na tela de fundo
+            atualizarSelectClientes();
+            
+            // Limpa o formulário do modal
+            document.getElementById('cadClienteForm').reset();
+            
+            // Fecha o modal
+            fecharModais();
+            
+            alert("Cliente e Equipamento salvos com sucesso na base offline!");
         };
-
-        bancoClientes.push(novo);
-        localStorage.setItem('marlift_banco_clientes', JSON.stringify(bancoClientes));
-        atualizarSelectClientes();
-        document.getElementById('cadClienteForm').reset();
-        fecharModais();
-        alert("Cadastrado com sucesso!");
-    });
+    }
 }
-
-function atualizarSelectClientes() {
-    const select = document.getElementById('buscaCliente');
-    select.innerHTML = '<option value="">-- Selecione um Cliente ou Máquina --</option>';
-    bancoClientes.sort((a, b) => a.nome.localeCompare(b.nome)).forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c.id; opt.textContent = `${c.nome} (${c.marca} ${c.modelo})`;
-        select.appendChild(opt);
-    });
-}
-
 // ==========================================
 // 2. CRONÔMETRO DE ATENDIMENTO E PERSISTÊNCIA
 // ==========================================
