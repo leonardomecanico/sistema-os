@@ -2,10 +2,11 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Viewport otimizada para evitar zoom exagerado em inputs no mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Marlift - Sistema de OS Mobile</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Bibliotecas externas necessárias para gerar o PDF e ícones -->
+    <!-- Bibliotecas externas para gerar o PDF e ícones -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 </head>
@@ -27,32 +28,32 @@
                 <section class="card">
                     <h2><i class="fa-solid fa-user"></i> 1. Dados do Cliente</h2>
                     <div class="form-group">
-                        <label>Nome do Cliente / Razão Social</label>
+                        <label for="cliNome">Nome do Cliente / Razão Social</label>
                         <input type="text" id="cliNome" required placeholder="Ex: Nome da Empresa">
                     </div>
                     <div class="form-group">
-                        <label>CNPJ</label>
-                        <input type="text" id="cliCnpj" placeholder="00.000.000/0000-00">
+                        <label for="cliCnpj">CNPJ</label>
+                        <input type="text" id="cliCnpj" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00">
                     </div>
                     <div class="form-group">
-                        <label>Endereço Completo</label>
+                        <label for="cliEndereco">Endereço Completo</label>
                         <input type="text" id="cliEndereco" required placeholder="Rua, Número, Bairro, Cidade - UF">
                         <button type="button" id="btnGps" class="btn-secondary"><i class="fa-solid fa-location-dot"></i> Gerar Rota no GPS</button>
                     </div>
                     <div class="row">
                         <div class="form-group">
-                            <label>Contato Responsável</label>
+                            <label for="cliContato">Contato Responsável</label>
                             <input type="text" id="cliContato" placeholder="Ex: João Silveira">
                         </div>
                     </div>
                     <div class="row">
                         <div class="form-group">
-                            <label>E-mail</label>
+                            <label for="cliEmail">E-mail</label>
                             <input type="email" id="cliEmail" placeholder="exemplo@email.com">
                         </div>
                         <div class="form-group">
-                            <label>Telefone</label>
-                            <input type="tel" id="cliTelefone" placeholder="(11) 99999-9999">
+                            <label for="cliTelefone">Telefone</label>
+                            <input type="tel" id="cliTelefone" inputmode="tel" maxlength="15" placeholder="(11) 99999-9999">
                         </div>
                     </div>
                 </section>
@@ -62,17 +63,17 @@
                     <h2><i class="fa-solid fa-truck-pickup"></i> 2. Dados do Equipamento</h2>
                     <div class="row">
                         <div class="form-group">
-                            <label>Marca</label>
+                            <label for="eqMarca">Marca</label>
                             <input type="text" id="eqMarca" required placeholder="Ex: Clark / Toyota">
                         </div>
                         <div class="form-group">
-                            <label>Modelo</label>
+                            <label for="eqModelo">Modelo</label>
                             <input type="text" id="eqModelo" required placeholder="Ex: CPY25 / 8FFG25">
                         </div>
                     </div>
                     <div class="row">
                         <div class="form-group">
-                            <label>Tipo de Combustível</label>
+                            <label for="eqCombustivel">Tipo de Combustível</label>
                             <select id="eqCombustivel" required>
                                 <option value="">Selecione...</option>
                                 <option value="GLP">GLP</option>
@@ -81,7 +82,7 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Número de Série</label>
+                            <label for="eqSerie">Número de Série</label>
                             <input type="text" id="eqSerie" required placeholder="Ex: E356-0023-9844">
                         </div>
                     </div>
@@ -91,7 +92,7 @@
                 <section class="card">
                     <h2><i class="fa-solid fa-wrench"></i> 3 & 4. Triagem do Chamado</h2>
                     <div class="form-group">
-                        <label>Tipo do Chamado</label>
+                        <label for="tipoChamado">Tipo do Chamado</label>
                         <select id="tipoChamado" required>
                             <option value="">Selecione o tipo...</option>
                             <option value="Emergencial">Emergencial</option>
@@ -103,7 +104,7 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Defeito Apresentado (Poucas palavras)</label>
+                        <label for="defeitoApresentado">Defeito Apresentado (Poucas palavras)</label>
                         <input type="text" id="defeitoApresentado" required placeholder="Ex: Motor superaquecendo / Vazamento na torre">
                     </div>
                 </section>
@@ -127,15 +128,15 @@
                 <section class="card">
                     <h2><i class="fa-solid fa-clipboard-list"></i> Relatório Técnico</h2>
                     <div class="form-group">
-                        <label>6. Descrição do Serviço Executado</label>
+                        <label for="servicoExecutado">6. Descrição do Serviço Executado</label>
                         <textarea id="servicoExecutado" rows="4" placeholder="Descreva detalhadamente o que foi feito..."></textarea>
                     </div>
                     <div class="form-group">
-                        <label>8. Peças Aplicadas (Uma por linha)</label>
-                        <textarea id="pecasAplicadas" rows="3" placeholder="Ex: 1x Filtro de Óvel&#10;1x Jogo de Velas"></textarea>
+                        <label for="pecasAplicadas">8. Peças Aplicadas (Uma por linha)</label>
+                        <textarea id="pecasAplicadas" rows="3" placeholder="Ex: 1x Filtro de Óleo&#10;1x Jogo de Velas"></textarea>
                     </div>
                     <div class="form-group">
-                        <label>9. Observações Gerais</label>
+                        <label for="obsGerais">9. Observações Gerais</label>
                         <textarea id="obsGerais" rows="2" placeholder="Notas adicionais importantes..."></textarea>
                     </div>
                 </section>
@@ -201,7 +202,7 @@
                 </select>
             </div>
             <div class="form-group" id="campoMotivoOutro" style="display:none;">
-                <label>Especifique o motivo:</label>
+                <label for="motivoPausaOutroInput">Especifique o motivo:</label>
                 <input type="text" id="motivoPausaOutroInput" placeholder="Digite o motivo...">
             </div>
             <button type="button" id="btnConfirmarPausa" class="btn-success">Confirmar Pausa</button>
