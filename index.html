@@ -170,43 +170,83 @@
         </main>
     </div>
 
-    <div id="modalGerenciador" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-address-book"></i> Cadastrar Cliente/Máquina</h3>
-                <button type="button" id="btnFecharGerenciador" class="btn-close">&times;</button>
-            </div>
-            <form id="cadClienteForm" onsubmit="event.preventDefault();">
-                <h4>Dados da Empresa</h4>
-                <div class="form-group"><label>Razão Social *</label><input type="text" id="cadCliNome" required></div>
-                <div class="form-group"><label>CNPJ</label><input type="text" id="cadCliCnpj" placeholder="00.000.000/0000-00"></div>
-                <div class="form-group"><label>Endereço Completo *</label><input type="text" id="cadCliEndereco" required></div>
-                <div class="row">
-                    <div class="form-group"><label>Contato</label><input type="text" id="cadCliContato"></div>
-                    <div class="form-group"><label>Telefone</label><input type="tel" id="cadCliTelefone"></div>
-                </div>
-                
-                <h4>Dados do Equipamento</h4>
-                <div class="row">
-                    <div class="form-group"><label>Marca *</label><input type="text" id="cadEqMarca" required></div>
-                    <div class="form-group"><label>Modelo *</label><input type="text" id="cadEqModelo" required></div>
-                </div>
-                <div class="row">
-                    <div class="form-group">
-                        <label>Combustível *</label>
-                        <select id="cadEqCombustivel" required>
-                            <option value="GLP">GLP</option>
-                            <option value="Elétrica">Elétrica</option>
-                            <option value="Diesel">Diesel</option>
-                        </select>
-                    </div>
-                    <div class="form-group"><label>Nº de Série *</label><input type="text" id="cadEqSerie" required></div>
-                </div>
-                <button type="button" id="btnSalvarNovoCliente" class="btn-success w-100 mt-1">Salvar na Base Local</button>
-            </form>
+   <!-- ==========================================
+     MODAL: CADASTRO DE CLIENTE E EQUIPAMENTO (CORRIGIDO)
+     ========================================== -->
+<div id="modalGerenciador" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-user-plus"></i> Novo Cliente / Máquina</h3>
+            <button type="button" id="btnFecharGerenciador" class="btn-close">&times;</button>
         </div>
-    </div>
+        
+        <!-- O onsubmit="return false;" impede o formulário de recarregar a página e travar o salvamento -->
+        <form id="cadClienteForm" onsubmit="event.preventDefault(); return false;">
+            
+            <h4><i class="fa-solid fa-building"></i> Dados da Empresa</h4>
+            <div class="form-group">
+                <label>Razão Social / Nome *</label>
+                <input type="text" id="cadCliNome" required placeholder="Ex: Marlift Empilhadeiras">
+            </div>
+            <div class="form-group">
+                <label>CNPJ</label>
+                <input type="text" id="cadCliCnpj" placeholder="Ex: 00.000.000/0001-00">
+            </div>
+            <div class="form-group">
+                <label>Endereço Completo *</label>
+                <input type="text" id="cadCliEndereco" required placeholder="Rua, Número, Bairro, Cidade">
+            </div>
+            <div class="row">
+                <div class="form-group">
+                    <label>Contato Responsável</label>
+                    <input type="text" id="cadCliContato" placeholder="Nome do contato">
+                </div>
+                <div class="form-group">
+                    <label>Telefone / WhatsApp</label>
+                    <input type="tel" id="cadCliTelefone" placeholder="(11) 99999-9999">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>E-mail para Envio de OS</label>
+                <input type="email" id="cadCliEmail" placeholder="contato@cliente.com">
+            </div>
 
+            <h4><i class="fa-solid fa-truck-ramp-box"></i> Dados do Equipamento</h4>
+            <div class="row">
+                <div class="form-group">
+                    <label>Marca *</label>
+                    <input type="text" id="cadEqMarca" required placeholder="Ex: Clark / Toyota">
+                </div>
+                <div class="form-group">
+                    <label>Modelo *</label>
+                    <input type="text" id="cadEqModelo" required placeholder="Ex: C30L / 8FGF25">
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group">
+                    <label>Combustível</label>
+                    <select id="cadEqCombustivel">
+                        <option value="GLP">GLP</option>
+                        <option value="Elétrica">Elétrica</option>
+                        <option value="Diesel">Diesel</option>
+                        <option value="Gasolina">Gasolina</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Nº de Série *</label>
+                    <input type="text" id="cadEqSerie" required placeholder="Ex: M365-0015-9999">
+                </div>
+            </div>
+
+            <div class="modal-actions mt-1">
+                <!-- Certifique-se de que o tipo é BUTTON para não disparar submit incorreto -->
+                <button type="button" id="btnSalvarNovoCliente" class="btn-primary w-100">
+                    <i class="fa-solid fa-floppy-disk"></i> Salvar na Base Offline
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
     <div id="modalAssinatura" class="modal">
         <div class="modal-content">
             <h3>Assine na Tela</h3>
