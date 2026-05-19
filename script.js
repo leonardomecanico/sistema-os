@@ -458,4 +458,43 @@ document.getElementById('btnSalvarPlanilha').addEventListener('click', function(
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Tentar Novamente';
     });
+});// Lógica para enviar os dados para a Planilha OS-MARLIFT
+document.getElementById('btnSalvarPlanilha').addEventListener('click', function() {
+    const urlScript = "https://script.google.com/macros/s/AKfycbxR_JT-SRZdFNaWWTudoqU-cXyfDSzel509GnOnc5CF12WGzojsAXC63pvU6qg_oUAo6g/exec";
+    
+    // Pega os valores que você digitou nos campos
+    const dados = {
+        nome: document.getElementById('cliNome').value,
+        cnpj: document.getElementById('cliCnpj').value,
+        endereco: document.getElementById('cliEndereco').value,
+        contato: document.getElementById('cliContato').value,
+        email: document.getElementById('cliEmail').value,
+        telefone: document.getElementById('cliTelefone').value
+    };
+
+    if (!dados.nome) {
+        alert("Digite pelo menos o Nome do Cliente!");
+        return;
+    }
+
+    this.disabled = true;
+    this.innerHTML = "ENVIANDO PARA PLANILHA...";
+    this.style.backgroundColor = "#6c757d";
+
+    fetch(urlScript, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify(dados)
+    })
+    .then(() => {
+        alert("CLIENTE SALVO COM SUCESSO!");
+        this.disabled = false;
+        this.innerHTML = "SALVAR CLIENTE NA PLANILHA";
+        this.style.backgroundColor = "#28a745";
+    })
+    .catch(err => {
+        alert("Erro ao salvar. Verifique a internet.");
+        this.disabled = false;
+        this.style.backgroundColor = "#28a745";
+    });
 });
