@@ -415,21 +415,6 @@ document.getElementById('btnGerarPdf').addEventListener('click', () => {
     html2pdf().set(opt).from(template.innerHTML).save();
 });const URL_API = "https://script.google.com/macros/s/AKfycbyMEXY3mmLayq2arquaT5QLHvMaDUQrNNc1X8UqtO4xR4GJJYNVSUuXoPbOEqOwBKBEOg/exec";
 
-// 1. CARREGAR CLIENTES DA PLANILHA AO ABRIR O APP
-window.onload = function() {
-    fetch(URL_API)
-        .then(res => res.json())
-        .then(clientes => {
-            const datalist = document.getElementById('listaClientes');
-            clientes.forEach(c => {
-                let option = document.createElement('option');
-                option.value = c.nome;
-                datalist.appendChild(option);
-            });
-            // Guardar dados para auto-preencher depois
-            window.dadosClientes = clientes;
-        });
-};
 
 // 2. AUTO-PREENCHER CAMPOS AO SELECIONAR CLIENTE
 document.getElementById('cliNome').addEventListener('input', function() {
