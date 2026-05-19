@@ -216,11 +216,88 @@ document.getElementById('btnFinalizarOS').addEventListener('click', function() {
     this.style.backgroundColor = "#6c757d"; // Fica cinza (indica que já foi clicado)
     this.disabled = true; // Trava para não clicar de novo por erro
     
-    // 4. Ativa o botão de gerar o relatório PDF
-    const btnGerar = document.getElementById('btnGerarPdf');
-    btnGerar.disabled = false; // Libera o botão
-    btnGerar.style.backgroundColor = "#ff6600"; // Fica Laranja Marlift (pronto para usar)
+   // --- FUNÇÃO BLINDADA PARA GERAR O PDF ---
+document.getElementById('btnGerarPdf').addEventListener('click', function() {
+    const temp = document.getElementById('pdfTemplate');
+    if (!temp) {
+        alert("Erro técnico: O elemento 'pdfTemplate' não foi encontrado no seu HTML.");
+        return;
+    }
+
+    // Força a exibição temporária para o celular conseguir renderizar as imagens e textos
+    temp.style.display = 'block';
+
+    // Coleta dos dados preenchidos na tela
+    const dados = {
+        cliente: document.getElementById('cliNome').value || 'Cliente Não Informado',
+        cnpj: document.getElementById('cliCnpj').value || '-',
+        end: document.getElementById('cliEndereco').value || '-',
+        contato: document.getElementById('cliContato').value || '-',
+        marca: document.getElementById('eqMarca').value || '-',
+        modelo: document.getElementById('eqModelo').value || '-',
+        serie: document.getElementById('eqSerie').value || '-',
+        comb: document.getElementById('eqCombustivel').value || '-',
+        servico: document.getElementById('servicoExecutado')?.value || 'Não informado.',
+        pecas: document.getElementById('pecasAplicadas')?.value || 'Nenhuma peça aplicada.'
+    };
+
+    // Montagem do documento com a identidade visual da Marlift
+    temp.innerHTML = `
+        <div style="padding:20px; font-family:Arial, sans-serif; color:#333; background:#fff;">
+            <div style="border-bottom:3px solid #ff6600; padding-bottom:10px; margin-bottom:20px;">
+                <h1 style="margin:0; color:#ff6600; font-size:24px;">MARLIFT EMPILHADEIRAS</h1>
+                <span style="font-size:12px; font-weight:bold; color:#555;">RELATÓRIO DE ATENDIMENTO TÉCNICO</span>
+            </div>
+            
+            <p style="font-size:12px;"><strong>Cliente:</strong> ${dados.cliente} | <strong>CNPJ:</strong> ${dados.cnpj}</p>
+            <p style="font-size:12px;"><strong>Endereço:</strong> ${dados.end}</p>
+            <p style="font-size:12px;"><strong>Contato:</strong> ${dados.contato}</p>
+            <hr style="border:0; border-top:1px solid #ccc; margin:15px 0;">
+            
+            <p style="font-size:12px;"><strong>Máquina:</strong> ${dados.marca} ${dados.modelo} (${dados.comb}) | <strong>Série:</strong> ${dados.serie}</p>
+            <p style="font-size:12px;"><strong>Tempo Total de Mão de Obra:</strong> ${formatarTempo(tempoSegundos)}</p>
+            
+            <hr style="border:0; border-top:1px solid #ccc; margin:15px 0;">
+            <h4 style="color:#ff6600; margin-bottom:5px;">SERVIÇOS EXECUTADOS</h4>
+            <p style="font-size:12px; white-space:pre-wrap; background:#f9f9f9; padding:10px; border:1px solid #eee;">${dados.servico}</p>
+            
+            <h4 style="color:#ff6600; margin-bottom:5px;">PEÇAS APLICADAS</h4>
+            <p style="font-size:12px; white-space:pre-wrap; background:#f9f9f9; padding:10px; border:1px solid #eee;">${dados.pecas}</p>
+            
+            <hr style="border:0; border-top:1px solid #ccc; margin:15px 0;">
+            <h4 style="color:#ff6600; margin-bottom:5px;">EVIDÊNCIAS FOTOGRÁFICAS</h4>
+            <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px;">
+                ${fotosArray.map(f => `<img src="${f}" style="width:100%; border:1px solid #ddd; border-radius:4px;">`).join('')}
+            </div>
+            
+            <div style="margin-top:40px; display:flex; justify-content:space-around; text-align:center;">
+                <div style="width:45%; border-top:1px solid #999; padding-top:5px; font-size:12px;">
+                    <strong>MARLIFT EMPILHADEIRAS</strong><br>Técnico Responsável
+                </div>
+                <div style="width:45%; border-top:1px solid #999; padding-top:5px; font-size:12px;">
+                    ${assinaturaDataUrl ? `<img src="${assinaturaDataUrl}" style="max-height:60px; display:block; margin:0 auto 5px auto;">` : '<div style="height:60px;"></div>'}
+                    <strong>${dados.cliente}</strong><br>Assinatura do Cliente
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Configuração de salvamento do arquivo
+    const nomeArquivo = `OS_Marlift_${dados.cliente.replace(/\s+/g, '_')}.pdf`;
     
-    // 5. Alerta na tela para você ter certeza absoluta que funcionou
-    alert("Ordem de Serviço encerrada! O botão de Gerar PDF foi ativado.");
+    const configuracao = {
+        margin: 0,
+        filename: nomeArquivo,
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // Executa a geração, baixa o arquivo e depois esconde a div novamente
+    html2pdf().set(configuracao).from(temp).save().then(() => {
+        temp.style.display = 'none';
+    }).catch(erro => {
+        alert("Erro ao gerar PDF: " + erro);
+        temp.style.display = 'none';
+    });
 });
