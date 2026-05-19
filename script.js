@@ -32,7 +32,7 @@ if (btnGps) {
             alert('Por favor, digite o endereço completo do cliente primeiro.');
             return;
         }
-        const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`;
+        const url = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(endereco);
         window.open(url, '_blank');
     });
 }
