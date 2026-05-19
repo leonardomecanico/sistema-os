@@ -413,56 +413,39 @@ document.getElementById('btnGerarPdf').addEventListener('click', () => {
     };
 
     html2pdf().set(opt).from(template.innerHTML).save();
-});// FUNÇÃO PARA SALVAR NOVO CLIENTE NA PLANILHA OS-MARLIFT
-document.getElementById('btnSalvarPlanilha').addEventListener('click', function() {
-    const btn = this;
-    const urlPlanilha = "https://script.google.com/macros/s/AKfycbxR_JT-SRZdFNaWWTudoqU-cXyfDSzel509GnOnc5CF12WGzojsAXC63pvU6qg_oUAo6g/exec";
-    
-    // Captura os dados dos campos do formulário
-    const dadosCliente = {
-        nome: document.getElementById('cliNome').value,
-        cnpj: document.getElementById('cliCnpj').value,
-        endereco: document.getElementById('cliEndereco').value,
-        contato: document.getElementById('cliContato').value,
-        email: document.getElementById('cliEmail').value,
-        telefone: document.getElementById('cliTelefone').value
-    };
+});const URL_API = "SUA_URL_DA_IMPLANTAÇÃO_AQUI";
 
-    // Validação simples
-    if (!dadosCliente.nome) {
-        alert("Por favor, preencha ao menos o nome do cliente antes de salvar.");
-        return;
+// 1. CARREGAR CLIENTES DA PLANILHA AO ABRIR O APP
+window.onload = function() {
+    fetch(URL_API)
+        .then(res => res.json())
+        .then(clientes => {
+            const datalist = document.getElementById('listaClientes');
+            clientes.forEach(c => {
+                let option = document.createElement('option');
+                option.value = c.nome;
+                datalist.appendChild(option);
+            });
+            // Guardar dados para auto-preencher depois
+            window.dadosClientes = clientes;
+        });
+};
+
+// 2. AUTO-PREENCHER CAMPOS AO SELECIONAR CLIENTE
+document.getElementById('cliNome').addEventListener('input', function() {
+    const clienteEncontrado = window.dadosClientes.find(c => c.nome === this.value);
+    if (clienteEncontrado) {
+        document.getElementById('cliCnpj').value = clienteEncontrado.cnpj;
+        document.getElementById('cliEndereco').value = clienteEncontrado.endereco;
+        document.getElementById('cliContato').value = clienteEncontrado.contato;
+        document.getElementById('cliEmail').value = clienteEncontrado.email;
+        document.getElementById('cliTelefone').value = clienteEncontrado.telefone;
     }
+});
 
-    // Feedback visual de carregamento
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando na Planilha...';
-
-    // Envio dos dados para o Google Apps Script
-    fetch(urlPlanilha, {
-        method: "POST",
-        mode: "no-cors", 
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(dadosCliente)
-    })
-    .then(() => {
-        alert("Sucesso! O cliente foi enviado para a planilha OS-MARLIFT.");
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Salvar Cliente na Planilha';
-    })
-    .catch(err => {
-        console.error("Erro ao salvar:", err);
-        alert("Houve um erro na comunicação com a planilha. Verifique sua internet.");
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Tentar Novamente';
-    });
-});// Lógica para enviar os dados para a Planilha OS-MARLIFT
-document.getElementById('btnSalvarPlanilha').addEventListener('click', function() {
-    const urlScript = "https://script.google.com/macros/s/AKfycbxR_JT-SRZdFNaWWTudoqU-cXyfDSzel509GnOnc5CF12WGzojsAXC63pvU6qg_oUAo6g/exec";
-    
-    // Pega os valores que você digitou nos campos
+// 3. SALVAR NOVO CLIENTE NA PLANILHA
+document.getElementById('btnSalvarCliente').addEventListener('click', function() {
+    const btn = this;
     const dados = {
         nome: document.getElementById('cliNome').value,
         cnpj: document.getElementById('cliCnpj').value,
@@ -472,29 +455,18 @@ document.getElementById('btnSalvarPlanilha').addEventListener('click', function(
         telefone: document.getElementById('cliTelefone').value
     };
 
-    if (!dados.nome) {
-        alert("Digite pelo menos o Nome do Cliente!");
-        return;
-    }
+    if (!dados.nome) return alert("Preencha o nome!");
 
-    this.disabled = true;
-    this.innerHTML = "ENVIANDO PARA PLANILHA...";
-    this.style.backgroundColor = "#6c757d";
+    btn.disabled = true;
+    btn.innerText = "ENVIANDO...";
 
-    fetch(urlScript, {
+    fetch(URL_API, {
         method: "POST",
         mode: "no-cors",
         body: JSON.stringify(dados)
-    })
-    .then(() => {
-        alert("CLIENTE SALVO COM SUCESSO!");
-        this.disabled = false;
-        this.innerHTML = "SALVAR CLIENTE";
-        this.style.backgroundColor = "#28a745";
-    })
-    .catch(err => {
-        alert("Erro ao salvar. Verifique a internet.");
-        this.disabled = false;
-        this.style.backgroundColor = "#28a745";
+    }).then(() => {
+        alert("Cliente salvo na planilha OS-MARLIFT!");
+        btn.disabled = false;
+        btn.innerText = "SALVAR CLIENTE";
     });
 });
