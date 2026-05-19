@@ -3,38 +3,39 @@ let cronometroInterval = null;
 let tempoSegundos = 0;
 let statusCronometro = 'parado'; // parado, rodando, pausado
 let historicoTempos = [];
-let fotosArray = []; 
+let fotosArray = []; // Guarda as fotos em Base64
 let assinaturaDataUrl = null;
 let geolocalizacaoAtual = "Não capturada";
 
 // Elementos DOM da Assinatura
 const modalAssinatura = document.getElementById('modalAssinatura');
 const canvas = document.getElementById('canvasAssinatura');
-const ctx = canvas.getContext('2d');
+const ctx = canvas ? canvas.getContext('2d') : null;
 let desenhando = false;
 
 // Elementos DOM da Pausa
 const modalPausa = document.getElementById('modalPausa');
 const motivoPausaSelect = document.getElementById('motivoPausaSelect');
-const campoMotivoOutro = document.getElementById('campoMotivoOutro');
-const motivoPausaOutroInput = document.getElementById('motivoPausaOutroInput');
 
-// INICIALIZAÇÃO
+// INICIALIZAÇÃO DO APP
 window.addEventListener('load', () => {
-    configurarCanvasTouch();
+    if (canvas) configurarCanvasTouch();
     capturarCoordenadasGPS();
 });
 
 // LINK DE GPS PARA O ENDEREÇO DO CLIENTE
-document.getElementById('btnGps').addEventListener('click', () => {
-    const endereco = document.getElementById('cliEndereco').value;
-    if(!endereco) {
-        alert('Por favor, digite o endereço completo do cliente primeiro.');
-        return;
-    }
-    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`;
-    window.open(url, '_blank');
-});
+const btnGps = document.getElementById('btnGps');
+if (btnGps) {
+    btnGps.addEventListener('click', () => {
+        const endereco = document.getElementById('cliEndereco').value;
+        if(!endereco) {
+            alert('Por favor, digite o endereço completo do cliente primeiro.');
+            return;
+        }
+        const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`;
+        window.open(url, '_blank');
+    });
+}
 
 // LOGICA DO CRONÔMETRO
 const displayTempo = document.getElementById('cronometroTempo');
@@ -42,53 +43,49 @@ const btnIniciar = document.getElementById('btnIniciar');
 const btnPausar = document.getElementById('btnPausar');
 const divHistorico = document.getElementById('historicoTempos');
 
-btnIniciar.addEventListener('click', () => {
-    if (statusCronometro === 'parado' || statusCronometro === 'pausado') {
-        statusCronometro = 'rodando';
-        btnIniciar.disabled = true;
-        btnPausar.disabled = false;
+if (btnIniciar) {
+    btnIniciar.addEventListener('click', () => {
+        if (statusCronometro === 'parado' || statusCronometro === 'pausado') {
+            statusCronometro = 'rodando';
+            btnIniciar.disabled = true;
+            if (btnPausar) btnPausar.disabled = false;
+            
+            let horaInicio = new Date().toLocaleTimeString('pt-BR');
+            historicoTempos.push({ tipo: 'Início/Retomada', hora: horaInicio, tempoRef: tempoSegundos });
+            atualizarHistoricoDOM();
+
+            cronometroInterval = setInterval(() => {
+                tempoSegundos++;
+                if (displayTempo) displayTempo.textContent = formatarTempo(tempoSegundos);
+            }, 1000);
+        }
+    });
+}
+
+if (btnPausar) {
+    btnPausar.addEventListener('click', () => {
+        if (statusCronometro === 'rodando' && modalPausa) {
+            modalPausa.style.display = 'flex';
+        }
+    });
+}
+
+const btnConfirmarPausa = document.getElementById('btnConfirmarPausa');
+if (btnConfirmarPausa) {
+    btnConfirmarPausa.addEventListener('click', () => {
+        clearInterval(cronometroInterval);
+        statusCronometro = 'pausado';
         
-        let horaInicio = new Date().toLocaleTimeString('pt-BR');
-        historicoTempos.push({ tipo: 'Início/Retomada', hora: horaInicio, tempoRef: tempoSegundos });
+        let motivo = motivoPausaSelect ? motivoPausaSelect.value : 'Intervalo';
+        let horaPausa = new Date().toLocaleTimeString('pt-BR');
+        historicoTempos.push({ tipo: `Pausa (${motivo})`, hora: horaPausa, tempoRef: tempoSegundos });
+        
+        if (modalPausa) modalPausa.style.display = 'none';
+        if (btnIniciar) btnIniciar.disabled = false;
+        if (btnPausar) btnPausar.disabled = true;
         atualizarHistoricoDOM();
-
-        cronometroInterval = setInterval(() => {
-            tempoSegundos++;
-            displayTempo.textContent = formatarTempo(tempoSegundos);
-        }, 1000);
-    }
-});
-
-btnPausar.addEventListener('click', () => {
-    if (statusCronometro === 'rodando') {
-        modalPausa.style.display = 'flex';
-    }
-});
-
-motivoPausaSelect.addEventListener('change', () => {
-    campoMotivoOutro.style.display = (motivoPausaSelect.value === 'Outro') ? 'block' : 'none';
-});
-
-document.getElementById('btnConfirmarPausa').addEventListener('click', () => {
-    clearInterval(cronometroInterval);
-    statusCronometro = 'pausado';
-    
-    let motivo = motivoPausaSelect.value;
-    if (motivo === 'Outro') {
-        motivo = motivoPausaOutroInput.value || 'Outro motivo não especificado';
-    }
-
-    let horaPausa = new Date().toLocaleTimeString('pt-BR');
-    historicoTempos.push({ tipo: `Pausa (${motivo})`, hora: horaPausa, tempoRef: tempoSegundos });
-    
-    modalPausa.style.display = 'none';
-    campoMotivoOutro.style.display = 'none';
-    motivoPausaOutroInput.value = '';
-    
-    btnIniciar.disabled = false;
-    btnPausar.disabled = true;
-    atualizarHistoricoDOM();
-});
+    });
+}
 
 function formatarTempo(totalSegundos) {
     let horas = Math.floor(totalSegundos / 3600);
@@ -98,6 +95,7 @@ function formatarTempo(totalSegundos) {
 }
 
 function atualizarHistoricoDOM() {
+    if (!divHistorico) return;
     divHistorico.innerHTML = '';
     historicoTempos.forEach(item => {
         const p = document.createElement('div');
@@ -112,45 +110,57 @@ function capturarCoordenadasGPS() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition((position) => {
             geolocalizacaoAtual = `Lat: ${position.coords.latitude.toFixed(5)}, Long: ${position.coords.longitude.toFixed(5)}`;
-        }, null, { enableHighAccuracy: true });
+        }, () => {
+            geolocalizacaoAtual = "GPS Indisponível";
+        }, { enableHighAccuracy: true });
     }
 }
 
-// GESTÃO DE FOTOS COM CARIMBO
-document.getElementById('inputFotos').addEventListener('change', function(e) {
-    const arquivos = Array.from(e.target.files);
-    arquivos.forEach(arquivo => {
-        if (fotosArray.length >= 15) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const imgObj = new Image();
-            imgObj.onload = () => processarECarimbarImagem(imgObj);
-            imgObj.src = event.target.result;
-        };
-        reader.readAsDataURL(arquivo);
+// GERENCIAMENTO DE FOTOS COM CARIMBO
+const inputFotos = document.getElementById('inputFotos');
+if (inputFotos) {
+    inputFotos.addEventListener('change', function(e) {
+        const arquivos = Array.from(e.target.files);
+        arquivos.forEach(arquivo => {
+            if (fotosArray.length >= 15) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const imgObj = new Image();
+                imgObj.onload = function() {
+                    processarECarimbarImagem(imgObj);
+                };
+                imgObj.src = event.target.result;
+            };
+            reader.readAsDataURL(arquivo);
+        });
+        this.value = ''; 
     });
-    this.value = ''; 
-});
+}
 
 function processarECarimbarImagem(imgObj) {
     const canvasFoto = document.createElement('canvas');
     const ctxFoto = canvasFoto.getContext('2d');
     const maxDim = 1024;
-    let w = imgObj.width, h = imgObj.height;
+    let w = imgObj.width;
+    let h = imgObj.height;
     if (w > maxDim || h > maxDim) {
         if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
         else { w = Math.round((w * maxDim) / h); h = maxDim; }
     }
-    canvasFoto.width = w; canvasFoto.height = h;
+    canvasFoto.width = w;
+    canvasFoto.height = h;
     ctxFoto.drawImage(imgObj, 0, 0, w, h);
     
-    const textoCarimbo = `MARLIFT | ${new Date().toLocaleString('pt-BR')} | GPS: ${geolocalizacaoAtual}`;
-    const alturaFaixa = Math.max(30, Math.round(h * 0.05));
-    ctxFoto.fillStyle = "rgba(44, 62, 80, 0.75)";
+    const dataHoraStr = `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`;
+    const textoCarimbo = `MARLIFT | ${dataHoraStr} | GPS: ${geolocalizacaoAtual}`;
+    const alturaFaixa = Math.round(h * 0.05) < 30 ? 30 : Math.round(h * 0.05);
+    
+    ctxFoto.fillStyle = "rgba(44, 62, 80, 0.75)"; 
     ctxFoto.fillRect(0, h - alturaFaixa, w, alturaFaixa);
-    ctxFoto.fillStyle = "#ff6600";
+    ctxFoto.fillStyle = "#ff6600"; 
     ctxFoto.font = `bold ${Math.round(alturaFaixa * 0.45)}px Arial`;
-    ctxFoto.fillText(textoCarimbo, 15, h - (alturaFaixa / 2.2));
+    ctxFoto.textBaseline = "middle";
+    ctxFoto.fillText(textoCarimbo, 15, h - (alturaFaixa / 2));
     
     fotosArray.push(canvasFoto.toDataURL('image/jpeg', 0.8));
     atualizarGaleriaDOM();
@@ -158,146 +168,247 @@ function processarECarimbarImagem(imgObj) {
 
 function atualizarGaleriaDOM() {
     const galeria = document.getElementById('galeriaFotos');
-    galeria.innerHTML = '';
-    document.getElementById('fotoContador').textContent = fotosArray.length;
-    fotosArray.forEach((foto, index) => {
-        const div = document.createElement('div');
-        div.className = 'foto-item';
-        div.innerHTML = `<img src="${foto}"><button type="button" class="btn-remover-foto" onclick="removerFoto(${index})">X</button>`;
-        galeria.appendChild(div);
-    });
-}
-
-window.removerFoto = (index) => { fotosArray.splice(index, 1); atualizarGaleriaDOM(); };
-
-// ASSINATURA
-function configurarCanvasTouch() {
-    const rect = canvas.getBoundingClientRect();
-    const getPos = (e) => ({
-        x: (e.touches ? e.touches[0].clientX : e.clientX) - canvas.getBoundingClientRect().left,
-        y: (e.touches ? e.touches[0].clientY : e.clientY) - canvas.getBoundingClientRect().top
-    });
-    const start = (e) => { desenhando = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); };
-    const move = (e) => { if(!desenhando) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); };
-    const stop = () => desenhando = false;
-
-    canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); window.addEventListener('mouseup', stop);
-    canvas.addEventListener('touchstart', start); canvas.addEventListener('touchmove', move); canvas.addEventListener('touchend', stop);
-}
-
-document.getElementById('btnAbrirAssinatura').addEventListener('click', () => {
-    modalAssinatura.style.display = 'flex';
-    canvas.width = canvas.parentElement.clientWidth; canvas.height = 180;
-    ctx.lineWidth = 3; ctx.strokeStyle = '#2c3e50'; ctx.lineCap = 'round';
-});
-
-document.getElementById('btnLimparAssinatura').addEventListener('click', () => ctx.clearRect(0,0,canvas.width,canvas.height));
-
-document.getElementById('btnSalvarAssinatura').addEventListener('click', () => {
-    assinaturaDataUrl = canvas.toDataURL();
-    document.getElementById('areaAssinaturaSalva').innerHTML = `<img src="${assinaturaDataUrl}" style="max-height:100px;">`;
-    modalAssinatura.style.display = 'none';
-    document.getElementById('btnFinalizarOS').disabled = false;
-});
-
-// --- BOTÃO: FINALIZAR OS ---
-document.getElementById('btnFinalizarOS').addEventListener('click', function() {
-    // 1. Encerra a contagem do cronômetro imediatamente
-    clearInterval(cronometroInterval);
-    statusCronometro = 'finalizado';
+    const fotoContador = document.getElementById('fotoContador');
+    if (galeria) galeria.innerHTML = '';
+    if (fotoContador) fotoContador.textContent = fotosArray.length;
     
-    // 2. Registra o horário do fim no histórico do relatório
-    let horaFim = new Date().toLocaleTimeString('pt-BR');
-    historicoTempos.push({ tipo: 'Finalização Autorizada', hora: horaFim, tempoRef: tempoSegundos });
-    atualizarHistoricoDOM();
-    
-    // 3. Muda o texto e a cor do próprio botão (Feedback visual no celular)
-    this.innerHTML = `<i class="fa-solid fa-check-double"></i> OS FINALIZADA`;
-    this.style.backgroundColor = "#6c757d"; // Fica cinza (indica que já foi clicado)
-    this.disabled = true; // Trava para não clicar de novo por erro
-    
-   // --- FUNÇÃO BLINDADA PARA GERAR O PDF ---
-document.getElementById('btnGerarPdf').addEventListener('click', function() {
-    const temp = document.getElementById('pdfTemplate');
-    if (!temp) {
-        alert("Erro técnico: O elemento 'pdfTemplate' não foi encontrado no seu HTML.");
-        return;
+    if (galeria) {
+        fotosArray.forEach((foto, index) => {
+            const div = document.createElement('div');
+            div.className = 'foto-item';
+            div.innerHTML = `
+                <img src="${foto}" style="width:100px; margin:5px; border-radius:4px;">
+                <button type="button" class="btn-remover-foto" onclick="removerFoto(${index})">X</button>
+            `;
+            galeria.appendChild(div);
+        });
     }
+}
 
-    // Força a exibição temporária para o celular conseguir renderizar as imagens e textos
-    temp.style.display = 'block';
+window.removerFoto = function(index) {
+    fotosArray.splice(index, 1);
+    atualizarGaleriaDOM();
+};
 
-    // Coleta dos dados preenchidos na tela
-    const dados = {
-        cliente: document.getElementById('cliNome').value || 'Cliente Não Informado',
-        cnpj: document.getElementById('cliCnpj').value || '-',
-        end: document.getElementById('cliEndereco').value || '-',
-        contato: document.getElementById('cliContato').value || '-',
-        marca: document.getElementById('eqMarca').value || '-',
-        modelo: document.getElementById('eqModelo').value || '-',
-        serie: document.getElementById('eqSerie').value || '-',
-        comb: document.getElementById('eqCombustivel').value || '-',
-        servico: document.getElementById('servicoExecutado')?.value || 'Não informado.',
-        pecas: document.getElementById('pecasAplicadas')?.value || 'Nenhuma peça aplicada.'
-    };
-
-    // Montagem do documento com a identidade visual da Marlift
-    temp.innerHTML = `
-        <div style="padding:20px; font-family:Arial, sans-serif; color:#333; background:#fff;">
-            <div style="border-bottom:3px solid #ff6600; padding-bottom:10px; margin-bottom:20px;">
-                <h1 style="margin:0; color:#ff6600; font-size:24px;">MARLIFT EMPILHADEIRAS</h1>
-                <span style="font-size:12px; font-weight:bold; color:#555;">RELATÓRIO DE ATENDIMENTO TÉCNICO</span>
-            </div>
-            
-            <p style="font-size:12px;"><strong>Cliente:</strong> ${dados.cliente} | <strong>CNPJ:</strong> ${dados.cnpj}</p>
-            <p style="font-size:12px;"><strong>Endereço:</strong> ${dados.end}</p>
-            <p style="font-size:12px;"><strong>Contato:</strong> ${dados.contato}</p>
-            <hr style="border:0; border-top:1px solid #ccc; margin:15px 0;">
-            
-            <p style="font-size:12px;"><strong>Máquina:</strong> ${dados.marca} ${dados.modelo} (${dados.comb}) | <strong>Série:</strong> ${dados.serie}</p>
-            <p style="font-size:12px;"><strong>Tempo Total de Mão de Obra:</strong> ${formatarTempo(tempoSegundos)}</p>
-            
-            <hr style="border:0; border-top:1px solid #ccc; margin:15px 0;">
-            <h4 style="color:#ff6600; margin-bottom:5px;">SERVIÇOS EXECUTADOS</h4>
-            <p style="font-size:12px; white-space:pre-wrap; background:#f9f9f9; padding:10px; border:1px solid #eee;">${dados.servico}</p>
-            
-            <h4 style="color:#ff6600; margin-bottom:5px;">PEÇAS APLICADAS</h4>
-            <p style="font-size:12px; white-space:pre-wrap; background:#f9f9f9; padding:10px; border:1px solid #eee;">${dados.pecas}</p>
-            
-            <hr style="border:0; border-top:1px solid #ccc; margin:15px 0;">
-            <h4 style="color:#ff6600; margin-bottom:5px;">EVIDÊNCIAS FOTOGRÁFICAS</h4>
-            <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px;">
-                ${fotosArray.map(f => `<img src="${f}" style="width:100%; border:1px solid #ddd; border-radius:4px;">`).join('')}
-            </div>
-            
-            <div style="margin-top:40px; display:flex; justify-content:space-around; text-align:center;">
-                <div style="width:45%; border-top:1px solid #999; padding-top:5px; font-size:12px;">
-                    <strong>MARLIFT EMPILHADEIRAS</strong><br>Técnico Responsável
-                </div>
-                <div style="width:45%; border-top:1px solid #999; padding-top:5px; font-size:12px;">
-                    ${assinaturaDataUrl ? `<img src="${assinaturaDataUrl}" style="max-height:60px; display:block; margin:0 auto 5px auto;">` : '<div style="height:60px;"></div>'}
-                    <strong>${dados.cliente}</strong><br>Assinatura do Cliente
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Configuração de salvamento do arquivo
-    const nomeArquivo = `OS_Marlift_${dados.cliente.replace(/\s+/g, '_')}.pdf`;
-    
-    const configuracao = {
-        margin: 0,
-        filename: nomeArquivo,
-        image: { type: 'jpeg', quality: 0.95 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    // Executa a geração, baixa o arquivo e depois esconde a div novamente
-    html2pdf().set(configuracao).from(temp).save().then(() => {
-        temp.style.display = 'none';
-    }).catch(erro => {
-        alert("Erro ao gerar PDF: " + erro);
-        temp.style.display = 'none';
+// CONTROLE DO PAINEL DE ASSINATURA
+const btnAbrirAssinatura = document.getElementById('btnAbrirAssinatura');
+if (btnAbrirAssinatura) {
+    btnAbrirAssinatura.addEventListener('click', () => {
+        if (modalAssinatura) {
+            modalAssinatura.style.display = 'flex';
+            redimensionarCanvasAssinatura();
+        }
     });
-});
+}
+
+function redimensionarCanvasAssinatura() {
+    if (!canvas) return;
+    canvas.width = canvas.parentElement.clientWidth || 300;
+    canvas.height = 180;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#2c3e50';
+}
+
+function configurarCanvasTouch() {
+    const obtenerPosicaoMouseTouch = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const clienteX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clienteY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clienteX - rect.left, y: clienteY - rect.top };
+    };
+
+    const iniciarDesenho = (e) => {
+        desenhando = true;
+        const pos = obtenerPosicaoMouseTouch(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+        if(e.touches) e.preventDefault();
+    };
+
+    const desenhar = (e) => {
+        if (!desenhando) return;
+        const pos = obtenerPosicaoMouseTouch(e);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        if(e.touches) e.preventDefault();
+    };
+
+    const pararDesenho = () => { desenhando = false; };
+
+    canvas.addEventListener('mousedown', iniciarDesenho);
+    canvas.addEventListener('mousemove', desenhar);
+    canvas.addEventListener('mouseup', pararDesenho);
+
+    canvas.addEventListener('touchstart', iniciarDesenho, {passive: false});
+    canvas.addEventListener('touchmove', desenhar, {passive: false});
+    canvas.addEventListener('touchend', pararDesenho);
+}
+
+const btnLimparAssinatura = document.getElementById('btnLimparAssinatura');
+if (btnLimparAssinatura) {
+    btnLimparAssinatura.addEventListener('click', () => {
+        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+}
+
+const btnSalvarAssinatura = document.getElementById('btnSalvarAssinatura');
+if (btnSalvarAssinatura) {
+    btnSalvarAssinatura.addEventListener('click', () => {
+        if (!canvas) return;
+        assinaturaDataUrl = canvas.toDataURL();
+        const areaAssinaturaSalva = document.getElementById('areaAssinaturaSalva');
+        if (areaAssinaturaSalva) areaAssinaturaSalva.innerHTML = `<img src="${assinaturaDataUrl}" style="max-height:80px;">`;
+        if (modalAssinatura) modalAssinatura.style.display = 'none';
+        
+        const btnFinalizarOS = document.getElementById('btnFinalizarOS');
+        if (btnFinalizarOS) btnFinalizarOS.disabled = false;
+    });
+}
+
+// FINALIZAÇÃO COMPLETA DA ORDEM DE SERVIÇO
+const btnFinalizarOS = document.getElementById('btnFinalizarOS');
+if (btnFinalizarOS) {
+    btnFinalizarOS.addEventListener('click', function() {
+        clearInterval(cronometroInterval);
+        statusCronometro = 'finalizado';
+        
+        let horaFim = new Date().toLocaleTimeString('pt-BR');
+        historicoTempos.push({ tipo: 'Finalização Autorizada', hora: horaFim, tempoRef: tempoSegundos });
+        atualizarHistoricoDOM();
+        
+        this.innerHTML = `<i class="fa-solid fa-check-double"></i> OS FINALIZADA`;
+        this.style.backgroundColor = "#6c757d";
+        this.disabled = true;
+        
+        const btnGerarPdf = document.getElementById('btnGerarPdf');
+        if (btnGerarPdf) {
+            btnGerarPdf.disabled = false;
+            btnGerarPdf.style.backgroundColor = "#ff6600";
+        }
+        alert("Ordem de Serviço finalizada com sucesso! O relatório PDF foi liberado.");
+    });
+}
+
+// MONTAGEM E GERAÇÃO DO ARQUIVO PDF
+const btnGerarPdf = document.getElementById('btnGerarPdf');
+if (btnGerarPdf) {
+    btnGerarPdf.addEventListener('click', () => {
+        const template = document.getElementById('pdfTemplate');
+        if (!template) {
+            alert("Erro: O local de montagem do PDF (pdfTemplate) não existe no HTML.");
+            return;
+        }
+        
+        template.style.display = 'block';
+
+        const pegarValor = (id) => {
+            const el = document.getElementById(id);
+            return el ? el.value : '-';
+        };
+
+        const dados = {
+            cliente: pegarValor('cliNome'),
+            cnpj: pegarValor('cliCnpj'),
+            end: pegarValor('cliEndereco'),
+            contato: pegarValor('cliContato'),
+            email: pegarValor('cliEmail'),
+            tel: pegarValor('cliTelefone'),
+            marca: pegarValor('eqMarca'),
+            modelo: pegarValor('eqModelo'),
+            comb: pegarValor('eqCombustivel'),
+            serie: pegarValor('eqSerie'),
+            servico: pegarValor('servicoExecutado') !== '-' ? pegarValor('servicoExecutado') : 'Laudo técnico não preenchido.',
+            pecas: pegarValor('pecasAplicadas') !== '-' ? pegarValor('pecasAplicadas') : 'Nenhuma peça aplicada.'
+        };
+
+        let logTemposHtml = historicoTempos.map(t => 
+            `<p style="font-size:11px; margin:2px 0;">• <strong>[${t.hora}]</strong> ${t.tipo} - Parcial: ${formatarTempo(t.tempoRef)}</p>`
+        ).join('');
+
+        let fotosHtml = fotosArray.map(foto => 
+            `<div style="display:inline-block; width:30%; margin:5px;"><img src="${foto}" style="width:100%; border:1px solid #ddd; border-radius:4px;"></div>`
+        ).join('');
+        if(fotosArray.length === 0) fotosHtml = '<p style="font-style:italic; font-size:11px;">Nenhuma evidência fotográfica registrada.</p>';
+
+        template.innerHTML = `
+            <div style="padding: 20px; font-family: Arial, sans-serif; color: #333; background: #fff;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #ff6600; padding-bottom: 10px;">
+                    <div>
+                        <h1 style="margin: 0; color: #ff6600; font-size: 22px;">MARLIFT EMPILHADEIRAS</h1>
+                        <p style="margin: 0; font-size: 12px; font-weight: bold;">RELATÓRIO DE ATENDIMENTO TÉCNICO</p>
+                    </div>
+                    <div style="text-align: right; font-size: 11px;">
+                        <p><strong>Emissão:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
+                        <p><strong>Duração Total:</strong> ${formatarTempo(tempoSegundos)}</p>
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px; border: 1px solid #ddd; padding: 10px; background: #f9f9f9;">
+                    <h3 style="font-size: 14px; margin-top: 0; color: #ff6600;">1. Dados do Cliente</h3>
+                    <p style="font-size: 12px; margin: 3px 0;"><strong>Razão Social:</strong> ${dados.cliente} | <strong>CNPJ:</strong> ${dados.cnpj}</p>
+                    <p style="font-size: 12px; margin: 3px 0;"><strong>Endereço:</strong> ${dados.end}</p>
+                    <p style="font-size: 12px; margin: 3px 0;"><strong>Contato:</strong> ${dados.contato} | <strong>Tel:</strong> ${dados.tel}</p>
+                </div>
+
+                <div style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
+                    <h3 style="font-size: 14px; margin-top: 0; color: #ff6600;">2. Dados do Equipamento</h3>
+                    <p style="font-size: 12px; margin: 3px 0;"><strong>Equipamento:</strong> ${dados.marca} ${dados.modelo} (${dados.comb}) | <strong>Série:</strong> ${dados.serie}</p>
+                </div>
+
+                <div style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
+                    <h3 style="font-size: 14px; margin-top: 0; color: #ff6600;">3. Histórico de Horas Mão de Obra</h3>
+                    ${logTemposHtml}
+                    <p style="font-size: 12px; font-weight: bold; margin-top: 5px; border-top: 1px dashed #ddd; padding-top:4px;">Tempo Faturável: ${formatarTempo(tempoSegundos)}</p>
+                </div>
+
+                <div style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
+                    <h3 style="font-size: 14px; margin-top: 0; color: #ff6600;">4. Laudo Técnico / Serviço Executado</h3>
+                    <p style="font-size: 12px; white-space: pre-wrap;">${dados.servico}</p>
+                </div>
+
+                <div style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
+                    <h3 style="font-size: 14px; margin-top: 0; color: #ff6600;">5. Peças Aplicadas</h3>
+                    <p style="font-size: 12px; white-space: pre-wrap;">${dados.pecas}</p>
+                </div>
+
+                <div style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
+                    <h3 style="font-size: 14px; margin-top: 0; color: #ff6600;">6. Evidências Fotográficas</h3>
+                    <div style="text-align: center;">${fotosHtml}</div>
+                </div>
+
+                <div style="margin-top: 40px; display: flex; justify-content: space-around; text-align: center;">
+                    <div style="width: 45%; border-top: 1px solid #333; padding-top: 5px;">
+                        <p style="font-size: 11px; font-weight:bold;">MARLIFT EMPILHADEIRAS</p>
+                        <p style="font-size: 10px; color:#555;">Técnico Responsável</p>
+                    </div>
+                    <div style="width: 45%; border-top: 1px solid #333; padding-top: 5px;">
+                        ${assinaturaDataUrl ? `<img src="${assinaturaDataUrl}" style="max-height: 50px; display: block; margin: 0 auto;">` : '<div style="height:50px;"></div>'}
+                        <p style="font-size: 11px; font-weight:bold;">${dados.cliente}</p>
+                        <p style="font-size: 10px; color:#555;">Assinatura do Cliente</p>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const opt = {
+            margin: 5,
+            filename: `OS_Marlift_${dados.cliente.replace(/\s+/g, '_')}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        if (typeof html2pdf !== 'undefined') {
+            html2pdf().set(opt).from(template).save().then(() => {
+                template.style.display = 'none';
+            }).catch(err => {
+                alert("Erro ao processar PDF: " + err);
+                template.style.display = 'none';
+            });
+        } else {
+            alert("Biblioteca de PDF não carregada no HTML.");
+            template.style.display = 'none';
+        }
+    });
+}
