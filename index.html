@@ -2,11 +2,9 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <!-- Viewport otimizada para evitar zoom exagerado em inputs no mobile -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Marlift - Sistema de OS Mobile</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Bibliotecas externas para gerar o PDF e ícones -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 </head>
@@ -21,14 +19,23 @@
         </header>
 
         <main>
-            <!-- FORMULÁRIO DE OS -->
             <form id="osForm" onsubmit="event.preventDefault();">
                 
-                <!-- SEÇÃO 1: DADOS DO CLIENTE -->
                 <section class="card">
                     <h2><i class="fa-solid fa-user"></i> 1. Dados do Cliente</h2>
+                    
+                    <div class="form-group box-destaque">
+                        <label for="buscaCliente" class="label-destaque"><i class="fa-solid fa-magnifying-glass"></i> Selecionar Cliente Cadastrado:</label>
+                        <div class="flex-row">
+                            <select id="buscaCliente" style="flex: 1;">
+                                <option value="">-- Selecione um Cliente ou Máquina --</option>
+                            </select>
+                            <button type="button" id="btnAbrirGerenciador" class="btn-secondary btn-icon" title="Cadastrar Novo Cliente"><i class="fa-solid fa-gear"></i></button>
+                        </div>
+                    </div>
+
                     <div class="form-group">
-                        <label for="cliNome">Nome do Cliente / Razão Social</label>
+                        <label for="cliNome">Razão Social *</label>
                         <input type="text" id="cliNome" required placeholder="Ex: Nome da Empresa">
                     </div>
                     <div class="form-group">
@@ -36,15 +43,13 @@
                         <input type="text" id="cliCnpj" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00">
                     </div>
                     <div class="form-group">
-                        <label for="cliEndereco">Endereço Completo</label>
-                        <input type="text" id="cliEndereco" required placeholder="Rua, Número, Bairro, Cidade - UF">
-                        <button type="button" id="btnGps" class="btn-secondary"><i class="fa-solid fa-location-dot"></i> Gerar Rota no GPS</button>
+                        <label for="cliEndereco">Endereço Completo *</label>
+                        <input type="text" id="cliEndereco" required placeholder="Rua, Número, Bairro, Cidade - SP">
+                        <button type="button" id="btnGps" class="btn-secondary mt-1"><i class="fa-solid fa-location-dot"></i> Gerar Rota no GPS</button>
                     </div>
-                    <div class="row">
-                        <div class="form-group">
-                            <label for="cliContato">Contato Responsável</label>
-                            <input type="text" id="cliContato" placeholder="Ex: João Silveira">
-                        </div>
+                    <div class="form-group">
+                        <label for="cliContato">Contato Responsável</label>
+                        <input type="text" id="cliContato" placeholder="Ex: João Silveira">
                     </div>
                     <div class="row">
                         <div class="form-group">
@@ -58,22 +63,21 @@
                     </div>
                 </section>
 
-                <!-- SEÇÃO 2: DADOS DO EQUIPAMENTO -->
                 <section class="card">
                     <h2><i class="fa-solid fa-truck-pickup"></i> 2. Dados do Equipamento</h2>
                     <div class="row">
                         <div class="form-group">
-                            <label for="eqMarca">Marca</label>
+                            <label for="eqMarca">Marca *</label>
                             <input type="text" id="eqMarca" required placeholder="Ex: Clark / Toyota">
                         </div>
                         <div class="form-group">
-                            <label for="eqModelo">Modelo</label>
-                            <input type="text" id="eqModelo" required placeholder="Ex: CPY25 / 8FFG25">
+                            <label for="eqModelo">Modelo *</label>
+                            <input type="text" id="eqModelo" required placeholder="Ex: CPY25">
                         </div>
                     </div>
                     <div class="row">
                         <div class="form-group">
-                            <label for="eqCombustivel">Tipo de Combustível</label>
+                            <label for="eqCombustivel">Combustível *</label>
                             <select id="eqCombustivel" required>
                                 <option value="">Selecione...</option>
                                 <option value="GLP">GLP</option>
@@ -82,13 +86,12 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="eqSerie">Número de Série</label>
-                            <input type="text" id="eqSerie" required placeholder="Ex: E356-0023-9844">
+                            <label for="eqSerie">Nº de Série *</label>
+                            <input type="text" id="eqSerie" required placeholder="Ex: E356-0023">
                         </div>
                     </div>
                 </section>
 
-                <!-- SEÇÃO 3 e 4: DEFEITO E TIPO DE CHAMADO -->
                 <section class="card">
                     <h2><i class="fa-solid fa-wrench"></i> 3 & 4. Triagem do Chamado</h2>
                     <div class="form-group">
@@ -100,31 +103,28 @@
                             <option value="Orçamento">Orçamento</option>
                             <option value="Corretivo">Corretivo</option>
                             <option value="Preventivo">Preventivo</option>
-                            <option value="Avaliação">Avaliação</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="defeitoApresentado">Defeito Apresentado (Poucas palavras)</label>
-                        <input type="text" id="defeitoApresentado" required placeholder="Ex: Motor superaquecendo / Vazamento na torre">
+                        <label for="defeitoApresentado">Defeito Apresentado (Resumo)</label>
+                        <input type="text" id="defeitoApresentado" required placeholder="Ex: Motor superaquecendo">
                     </div>
                 </section>
 
-                <!-- SEÇÃO 5: CRONÔMETRO DE HORAS -->
                 <section class="card">
                     <h2><i class="fa-solid fa-stopwatch"></i> 5. Tempo de Atendimento</h2>
-                    <div class="cronometro-display">
-                        <span id="cronometroTempo">00:00:00</span>
+                    <div class="cronometro-container">
+                        <div id="cronometroTempo" class="display-tempo">00:00:00</div>
+                        <div class="acoes-cronometro">
+                            <button type="button" id="btnIniciar" class="btn-primary"><i class="fa-solid fa-play"></i> Iniciar Atendimento</button>
+                            <button type="button" id="btnPausar" class="btn-warning" disabled><i class="fa-solid fa-pause"></i> Pausar</button>
+                        </div>
+                        <div id="historicoTempos" class="historico-tempos">
+                            <span class="text-muted">Aguardando início do serviço...</span>
+                        </div>
                     </div>
-                    <div class="cronometro-actions">
-                        <button type="button" id="btnIniciar" class="btn-start"><i class="fa-solid fa-play"></i> Iniciar</button>
-                        <button type="button" id="btnPausar" class="btn-pause" disabled><i class="fa-solid fa-pause"></i> Pausar</button>
-                    </div>
-                    
-                    <!-- Histórico de Pausas -->
-                    <div id="historicoTempos" class="historico-tempos"></div>
                 </section>
 
-                <!-- SEÇÃO 6, 8 e 9: LAUDO TÉCNICO E PEÇAS -->
                 <section class="card">
                     <h2><i class="fa-solid fa-clipboard-list"></i> Relatório Técnico</h2>
                     <div class="form-group">
@@ -133,7 +133,7 @@
                     </div>
                     <div class="form-group">
                         <label for="pecasAplicadas">8. Peças Aplicadas (Uma por linha)</label>
-                        <textarea id="pecasAplicadas" rows="3" placeholder="Ex: 1x Filtro de Óleo&#10;1x Jogo de Velas"></textarea>
+                        <textarea id="pecasAplicadas" rows="3" placeholder="Ex: 1x Filtro de Óleo&#10;1x Correia do Alternador"></textarea>
                     </div>
                     <div class="form-group">
                         <label for="obsGerais">9. Observações Gerais</label>
@@ -141,41 +141,72 @@
                     </div>
                 </section>
 
-                <!-- SEÇÃO 7: EVIDÊNCIAS FOTOGRÁFICAS -->
                 <section class="card">
-                    <h2><i class="fa-solid fa-camera"></i> 7. Evidências Fotográficas (<span id="fotoContador">0</span>/15)</h2>
+                    <h2><i class="fa-solid fa-camera"></i> 7. Evidências (<span id="fotoContador">0</span>/15)</h2>
                     <div class="upload-area">
-                        <label for="inputFotos" class="btn-upload">
+                        <label for="inputFotos" class="btn-primary w-100" style="display:inline-block; text-align:center; cursor:pointer;">
                             <i class="fa-solid fa-camera-retro"></i> Capturar ou Subir Foto
                         </label>
-                        <input type="file" id="inputFotos" accept="image/*" capture="environment" multiple style="display:none;">
+                        <input type="file" id="inputFotos" accept="image/*" multiple style="display:none;">
                     </div>
-                    <div id="galeriaFotos" class="galeria-fotos"></div>
+                    <div id="galeriaFotos" class="galeria-fotos mt-1"></div>
                 </section>
 
-                <!-- SEÇÃO 10 & 11: ASSINATURA E ENCERRAMENTO -->
                 <section class="card">
-                    <h2><i class="fa-solid fa-signature"></i> 10 & 11. Validação e Encerramento</h2>
-                    
+                    <h2><i class="fa-solid fa-signature"></i> 10 & 11. Encerramento</h2>
                     <div class="assinatura-container">
                         <p>Assinatura do Cliente:</p>
                         <div id="areaAssinaturaSalva" class="assinatura-salva-box">
                             <span class="placeholder-text">Nenhuma assinatura salva</span>
                         </div>
-                        <button type="button" id="btnAbrirAssinatura" class="btn-secondary"><i class="fa-solid fa-pen-nib"></i> Abrir Painel de Assinatura</button>
+                        <button type="button" id="btnAbrirAssinatura" class="btn-secondary w-100 mt-1"><i class="fa-solid fa-pen-nib"></i> Abrir Painel de Assinatura</button>
                     </div>
 
                     <div class="acoes-finais">
-                        <button type="button" id="btnFinalizarOS" class="btn-final" disabled><i class="fa-solid fa-lock"></i> Finalizar OS</button>
-                        <button type="button" id="btnGerarPdf" class="btn-pdf" disabled><i class="fa-solid fa-file-pdf"></i> Gerar Relatório PDF</button>
+                        <button type="button" id="btnGerarPdf" class="btn-pdf w-100" disabled><i class="fa-solid fa-file-pdf"></i> Gerar Relatório PDF</button>
                     </div>
                 </section>
-
             </form>
         </main>
     </div>
 
-    <!-- POP-UP DA ASSINATURA (MODAL) -->
+    <div id="modalGerenciador" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-address-book"></i> Cadastrar Cliente/Máquina</h3>
+                <button type="button" id="btnFecharGerenciador" class="btn-close">&times;</button>
+            </div>
+            <form id="cadClienteForm" onsubmit="event.preventDefault();">
+                <h4>Dados da Empresa</h4>
+                <div class="form-group"><label>Razão Social *</label><input type="text" id="cadCliNome" required></div>
+                <div class="form-group"><label>CNPJ</label><input type="text" id="cadCliCnpj" placeholder="00.000.000/0000-00"></div>
+                <div class="form-group"><label>Endereço Completo *</label><input type="text" id="cadCliEndereco" required></div>
+                <div class="row">
+                    <div class="form-group"><label>Contato</label><input type="text" id="cadCliContato"></div>
+                    <div class="form-group"><label>Telefone</label><input type="tel" id="cadCliTelefone"></div>
+                </div>
+                
+                <h4>Dados do Equipamento</h4>
+                <div class="row">
+                    <div class="form-group"><label>Marca *</label><input type="text" id="cadEqMarca" required></div>
+                    <div class="form-group"><label>Modelo *</label><input type="text" id="cadEqModelo" required></div>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label>Combustível *</label>
+                        <select id="cadEqCombustivel" required>
+                            <option value="GLP">GLP</option>
+                            <option value="Elétrica">Elétrica</option>
+                            <option value="Diesel">Diesel</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Nº de Série *</label><input type="text" id="cadEqSerie" required></div>
+                </div>
+                <button type="button" id="btnSalvarNovoCliente" class="btn-success w-100 mt-1">Salvar na Base Local</button>
+            </form>
+        </div>
+    </div>
+
     <div id="modalAssinatura" class="modal">
         <div class="modal-content">
             <h3>Assine na Tela</h3>
@@ -189,27 +220,26 @@
         </div>
     </div>
 
-    <!-- POP-UP DO MOTIVO DA PAUSA (MODAL) -->
     <div id="modalPausa" class="modal">
         <div class="modal-content">
-            <h3>Selecione o Motivo da Pausa</h3>
+            <h3>Motivo da Pausa</h3>
             <div class="form-group">
                 <select id="motivoPausaSelect">
                     <option value="Intervalo de almoço">Intervalo de almoço</option>
+                    <option value="Aguardando liberação do equipamento">Aguardando liberação do equipamento</option>
                     <option value="Aguardando peça">Aguardando peça</option>
                     <option value="Deslocamento até fornecedor">Deslocamento até fornecedor</option>
                     <option value="Outro">Outro</option>
                 </select>
             </div>
             <div class="form-group" id="campoMotivoOutro" style="display:none;">
-                <label for="motivoPausaOutroInput">Especifique o motivo:</label>
+                <label>Especifique o motivo:</label>
                 <input type="text" id="motivoPausaOutroInput" placeholder="Digite o motivo...">
             </div>
-            <button type="button" id="btnConfirmarPausa" class="btn-success">Confirmar Pausa</button>
+            <button type="button" id="btnConfirmarPausa" class="btn-success w-100">Confirmar Pausa</button>
         </div>
     </div>
 
-    <!-- ÁREA OCULTA QUE SERVIRÁ DE MODELO DE IMPRESSÃO DO PDF -->
     <div id="pdfTemplate" style="display: none;"></div>
 
     <script src="script.js"></script>
