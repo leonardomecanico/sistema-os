@@ -16,182 +16,267 @@
                 <h1>MARLIFT</h1>
                 <span>SISTEMA DE ORDEM DE SERVIÇO</span>
             </div>
+            <nav class="nav-tabs">
+                <button class="nav-tab active" data-tab="tab-os"><i class="fa-solid fa-file-invoice"></i> Nova O.S</button>
+                <button class="nav-tab" data-tab="tab-calendario"><i class="fa-solid fa-calendar"></i> Calendário</button>
+                <button class="nav-tab" data-tab="tab-historico"><i class="fa-solid fa-history"></i> Histórico</button>
+                <button class="nav-tab" data-tab="tab-config"><i class="fa-solid fa-gear"></i> Config</button>
+            </nav>
         </header>
 
         <main>
-            <form id="osForm" onsubmit="event.preventDefault();">
-                
-                <section class="card">
-                    <h2><i class="fa-solid fa-user"></i> 1. Dados do Cliente</h2>
+            <!-- ================ ABA 1: NOVA O.S ================ -->
+            <div id="tab-os" class="tab-content active">
+                <form id="osForm" onsubmit="event.preventDefault();">
                     
-                    <div class="form-group box-destaque">
-                        <label for="buscaCliente" class="label-destaque"><i class="fa-solid fa-magnifying-glass"></i> Selecionar Cliente Cadastrado:</label>
-                        <div class="flex-row">
-                            <select id="buscaCliente" style="flex: 1;">
-                                <option value="">-- Selecione um Cliente ou Máquina --</option>
+                    <!-- EMPRESA/CLIENTE -->
+                    <section class="card">
+                        <h2><i class="fa-solid fa-building"></i> Dados da Empresa</h2>
+                        <div class="form-group box-destaque">
+                            <label for="buscaCliente" class="label-destaque"><i class="fa-solid fa-magnifying-glass"></i> Selecionar Cliente:</label>
+                            <div class="flex-row">
+                                <select id="buscaCliente" style="flex: 1;">
+                                    <option value="">-- Selecione um Cliente --</option>
+                                </select>
+                                <button type="button" id="btnAbrirGerenciador" class="btn-secondary btn-icon" title="Cadastrar Novo Cliente"><i class="fa-solid fa-user-plus"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cliNome">Razão Social *</label>
+                            <input type="text" id="cliNome" required placeholder="Ex: Nome da Empresa">
+                        </div>
+                        <div class="form-group">
+                            <label for="cliCnpj">CNPJ</label>
+                            <input type="text" id="cliCnpj" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00">
+                        </div>
+                        <div class="form-group">
+                            <label for="cliEndereco">Endereço Completo *</label>
+                            <input type="text" id="cliEndereco" required placeholder="Rua, Número, Bairro, Cidade - SP">
+                            <button type="button" id="btnGps" class="btn-secondary mt-1"><i class="fa-solid fa-location-dot"></i> Gerar Rota no GPS</button>
+                        </div>
+                        <div class="form-group">
+                            <label for="cliContato">Contato Responsável</label>
+                            <input type="text" id="cliContato" placeholder="Ex: João Silveira">
+                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="cliEmail">E-mail</label>
+                                <input type="email" id="cliEmail" placeholder="exemplo@email.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="cliTelefone">Telefone</label>
+                                <input type="tel" id="cliTelefone" inputmode="tel" maxlength="15" placeholder="(11) 99999-9999">
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- EQUIPAMENTO -->
+                    <section class="card">
+                        <div class="flex-row" style="justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h2 style="margin: 0;"><i class="fa-solid fa-truck-pickup"></i> 2. Dados do Equipamento</h2>
+                            <button type="button" id="btnAdicionarEquipamento" class="btn-secondary btn-icon" title="Adicionar outro equipamento"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                        
+                        <div class="form-group box-destaque">
+                            <label for="selectEquipamento" class="label-destaque"><i class="fa-solid fa-magnifying-glass"></i> Equipamentos do Cliente:</label>
+                            <div class="flex-row">
+                                <select id="selectEquipamento" style="flex: 1;">
+                                    <option value="">-- Selecione um Equipamento --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="eqMarca">Marca *</label>
+                                <input type="text" id="eqMarca" required placeholder="Ex: Clark / Toyota">
+                            </div>
+                            <div class="form-group">
+                                <label for="eqModelo">Modelo *</label>
+                                <input type="text" id="eqModelo" required placeholder="Ex: CPY25">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="eqCombustivel">Combustível *</label>
+                                <select id="eqCombustivel" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="GLP">GLP</option>
+                                    <option value="Elétrica">Elétrica</option>
+                                    <option value="Diesel">Diesel</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="eqSerie">Nº de Série *</label>
+                                <input type="text" id="eqSerie" required placeholder="Ex: E356-0023">
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- TRIAGEM -->
+                    <section class="card">
+                        <h2><i class="fa-solid fa-wrench"></i> 3. Triagem do Chamado</h2>
+                        <div class="form-group">
+                            <label for="tipoChamado">Tipo do Chamado *</label>
+                            <select id="tipoChamado" required>
+                                <option value="">Selecione o tipo...</option>
+                                <option value="Emergencial">Emergencial</option>
+                                <option value="Garantia">Garantia</option>
+                                <option value="Orçamento">Orçamento</option>
+                                <option value="Corretivo">Corretivo</option>
+                                <option value="Preventivo">Preventivo</option>
                             </select>
-                            <button type="button" id="btnAbrirGerenciador" class="btn-secondary btn-icon" title="Cadastrar Novo Cliente"><i class="fa-solid fa-gear"></i></button>
                         </div>
-                    </div>
+                        <div class="form-group">
+                            <label for="defeitoApresentado">Defeito Apresentado (Resumo) *</label>
+                            <input type="text" id="defeitoApresentado" required placeholder="Ex: Motor superaquecendo">
+                        </div>
+                    </section>
 
-                    <div class="form-group">
-                        <label for="cliNome">Razão Social *</label>
-                        <input type="text" id="cliNome" required placeholder="Ex: Nome da Empresa">
-                    </div>
-                    <div class="form-group">
-                        <label for="cliCnpj">CNPJ</label>
-                        <input type="text" id="cliCnpj" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00">
-                    </div>
-                    <div class="form-group">
-                        <label for="cliEndereco">Endereço Completo *</label>
-                        <input type="text" id="cliEndereco" required placeholder="Rua, Número, Bairro, Cidade - SP">
-                        <button type="button" id="btnGps" class="btn-secondary mt-1"><i class="fa-solid fa-location-dot"></i> Gerar Rota no GPS</button>
-                    </div>
-                    <div class="form-group">
-                        <label for="cliContato">Contato Responsável</label>
-                        <input type="text" id="cliContato" placeholder="Ex: João Silveira">
-                    </div>
-                    <div class="row">
-                        <div class="form-group">
-                            <label for="cliEmail">E-mail</label>
-                            <input type="email" id="cliEmail" placeholder="exemplo@email.com">
+                    <!-- HORÁRIOS -->
+                    <section class="card">
+                        <h2><i class="fa-solid fa-clock"></i> 4. Horários do Atendimento</h2>
+                        <div class="row" style="display: flex; gap: 10px;">
+                            <div class="form-group" style="flex:1">
+                                <label>Início</label>
+                                <input type="time" id="timeInicio" class="form-control" oninput="autoSave()">
+                            </div>
+                            <div class="form-group" style="flex:1">
+                                <label>Pausa</label>
+                                <input type="time" id="timePausa" class="form-control" oninput="autoSave()">
+                            </div>
+                            <div class="form-group" style="flex:1">
+                                <label>Fim</label>
+                                <input type="time" id="timeFim" class="form-control" oninput="autoSave()">
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="cliTelefone">Telefone</label>
-                            <input type="tel" id="cliTelefone" inputmode="tel" maxlength="15" placeholder="(11) 99999-9999">
-                        </div>
-                    </div>
-                </section>
+                    </section>
 
-                <section class="card">
-                    <h2><i class="fa-solid fa-truck-pickup"></i> 2. Dados do Equipamento</h2>
-                    <div class="row">
+                    <!-- RELATÓRIO TÉCNICO -->
+                    <section class="card">
+                        <h2><i class="fa-solid fa-clipboard-list"></i> 5. Relatório Técnico</h2>
                         <div class="form-group">
-                            <label for="eqMarca">Marca *</label>
-                            <input type="text" id="eqMarca" required placeholder="Ex: Clark / Toyota">
+                            <label for="servicoExecutado">Descrição do Serviço Executado</label>
+                            <textarea id="servicoExecutado" rows="4" placeholder="Descreva detalhadamente o que foi feito..."></textarea>
                         </div>
                         <div class="form-group">
-                            <label for="eqModelo">Modelo *</label>
-                            <input type="text" id="eqModelo" required placeholder="Ex: CPY25">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="form-group">
-                            <label for="eqCombustivel">Combustível *</label>
-                            <select id="eqCombustivel" required>
-                                <option value="">Selecione...</option>
-                                <option value="GLP">GLP</option>
-                                <option value="Elétrica">Elétrica</option>
-                                <option value="Diesel">Diesel</option>
-                            </select>
+                            <label for="pecasAplicadas">Peças Aplicadas (Uma por linha)</label>
+                            <textarea id="pecasAplicadas" rows="3" placeholder="Ex: 1x Filtro de Óleo&#10;1x Correia do Alternador"></textarea>
                         </div>
                         <div class="form-group">
-                            <label for="eqSerie">Nº de Série *</label>
-                            <input type="text" id="eqSerie" required placeholder="Ex: E356-0023">
+                            <label for="obsGerais">Observações Gerais</label>
+                            <textarea id="obsGerais" rows="2" placeholder="Notas adicionais importantes..."></textarea>
                         </div>
-                    </div>
-                </section>
+                    </section>
 
-                <section class="card">
-                    <h2><i class="fa-solid fa-wrench"></i> 3 & 4. Triagem do Chamado</h2>
-                    <div class="form-group">
-                        <label for="tipoChamado">Tipo do Chamado</label>
-                        <select id="tipoChamado" required>
-                            <option value="">Selecione o tipo...</option>
-                            <option value="Emergencial">Emergencial</option>
-                            <option value="Garantia">Garantia</option>
-                            <option value="Orçamento">Orçamento</option>
-                            <option value="Corretivo">Corretivo</option>
-                            <option value="Preventivo">Preventivo</option>
+                    <!-- FOTOS -->
+                    <section class="card">
+                        <h2><i class="fa-solid fa-camera"></i> 6. Evidências (<span id="fotoContador">0</span>/40)</h2>
+                        <div class="upload-area">
+                            <div class="flex-row" style="gap: 10px;">
+                                <label for="inputFotos" class="btn-primary" style="flex: 1; display:inline-block; text-align:center; cursor:pointer;">
+                                    <i class="fa-solid fa-camera"></i> Câmera
+                                </label>
+                                <label for="inputFotosUpload" class="btn-primary" style="flex: 1; display:inline-block; text-align:center; cursor:pointer;">
+                                    <i class="fa-solid fa-image"></i> Galeria
+                                </label>
+                            </div>
+                            <input type="file" id="inputFotos" accept="image/*" capture="environment" multiple style="display:none;">
+                            <input type="file" id="inputFotosUpload" accept="image/*" multiple style="display:none;">
+                        </div>
+                        <div id="galeriaFotos" class="galeria-fotos mt-1"></div>
+                    </section>
+
+                    <!-- ASSINATURA -->
+                    <section class="card">
+                        <h2><i class="fa-solid fa-signature"></i> 7. Assinatura do Cliente</h2>
+                        <div class="assinatura-container">
+                            <div id="areaAssinaturaSalva" class="assinatura-salva-box">
+                                <span class="placeholder-text">Nenhuma assinatura salva</span>
+                            </div>
+                            <button type="button" id="btnAbrirAssinatura" class="btn-secondary w-100 mt-1"><i class="fa-solid fa-pen-nib"></i> Abrir Painel de Assinatura</button>
+                        </div>
+
+                        <div class="acoes-finais mt-1">
+                            <button type="button" id="btnSalvarOS" class="btn-success w-100"><i class="fa-solid fa-floppy-disk"></i> Salvar O.S</button>
+                            <button type="button" id="btnGerarPdf" class="btn-pdf w-100 mt-1" disabled><i class="fa-solid fa-file-pdf"></i> Gerar Relatório PDF</button>
+                        </div>
+                    </section>
+                </form>
+            </div>
+
+            <!-- ================ ABA 2: CALENDÁRIO ================ -->
+            <div id="tab-calendario" class="tab-content">
+                <div class="card">
+                    <h2><i class="fa-solid fa-calendar"></i> Agendamento de O.S</h2>
+                    <div id="calendario" class="calendario-container"></div>
+                </div>
+                <div id="osAgendadas" class="mt-1"></div>
+            </div>
+
+            <!-- ================ ABA 3: HISTÓRICO ================ -->
+            <div id="tab-historico" class="tab-content">
+                <div class="card">
+                    <h2><i class="fa-solid fa-history"></i> Histórico de O.S</h2>
+                    <div class="filtros-historico">
+                        <input type="text" id="filtroCliente" placeholder="Filtrar por cliente..." class="form-control mt-1">
+                        <select id="filtroStatus" class="form-control mt-1">
+                            <option value="">Todos os Status</option>
+                            <option value="pendente">Pendente</option>
+                            <option value="concluida">Concluída</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="defeitoApresentado">Defeito Apresentado (Resumo)</label>
-                        <input type="text" id="defeitoApresentado" required placeholder="Ex: Motor superaquecendo">
-                    </div>
-                </section>
-
-               <section class="card" id="cardTempoManual">
-    <div class="card-header">
-        <div class="card-icon"><i class="fa-solid fa-clock"></i></div>
-        <div>
-            <div class="card-title">5. Horários do Atendimento</div>
-            <div class="card-subtitle">Preenchimento manual (Início, Pausa, Fim)</div>
-        </div>
-    </div>
-    <div class="card-body">
-        <div class="row" style="display: flex; gap: 10px;">
-            <div class="form-group" style="flex:1">
-                <label class="form-label">Início</label>
-                <input type="time" id="timeInicio" class="form-control" oninput="autoSave()">
+                </div>
+                <div id="historicoOS" class="mt-1"></div>
             </div>
-            <div class="form-group" style="flex:1">
-                <label class="form-label">Pausa</label>
-                <input type="time" id="timePausa" class="form-control" oninput="autoSave()">
-            </div>
-            <div class="form-group" style="flex:1">
-                <label class="form-label">Fim</label>
-                <input type="time" id="timeFim" class="form-control" oninput="autoSave()">
-            </div>
-        </div>
-    </div>
-</section>
-                <section class="card">
-                    <h2><i class="fa-solid fa-clipboard-list"></i> Relatório Técnico</h2>
-                    <div class="form-group">
-                        <label for="servicoExecutado">6. Descrição do Serviço Executado</label>
-                        <textarea id="servicoExecutado" rows="4" placeholder="Descreva detalhadamente o que foi feito..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="pecasAplicadas">8. Peças Aplicadas (Uma por linha)</label>
-                        <textarea id="pecasAplicadas" rows="3" placeholder="Ex: 1x Filtro de Óleo&#10;1x Correia do Alternador"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="obsGerais">9. Observações Gerais</label>
-                        <textarea id="obsGerais" rows="2" placeholder="Notas adicionais importantes..."></textarea>
-                    </div>
-                </section>
 
-                <section class="card">
-                    <h2><i class="fa-solid fa-camera"></i> 7. Evidências (<span id="fotoContador">0</span>/15)</h2>
-                    <div class="upload-area">
-                        <label for="inputFotos" class="btn-primary w-100" style="display:inline-block; text-align:center; cursor:pointer;">
-                            <i class="fa-solid fa-camera-retro"></i> Capturar ou Subir Foto
-                        </label>
-                        <input type="file" id="inputFotos" accept="image/*" multiple style="display:none;">
+            <!-- ================ ABA 4: CONFIGURAÇÕES ================ -->
+            <div id="tab-config" class="tab-content">
+                <div class="card">
+                    <h2><i class="fa-solid fa-building"></i> Dados da Empresa</h2>
+                    <div class="form-group">
+                        <label for="empresaNome">Nome da Empresa *</label>
+                        <input type="text" id="empresaNome" required placeholder="Ex: Manutenção e Serviços Ltda">
                     </div>
-                    <div id="galeriaFotos" class="galeria-fotos mt-1"></div>
-                </section>
-
-                <section class="card">
-                    <h2><i class="fa-solid fa-signature"></i> 10 & 11. Encerramento</h2>
-                    <div class="assinatura-container">
-                        <p>Assinatura do Cliente:</p>
-                        <div id="areaAssinaturaSalva" class="assinatura-salva-box">
-                            <span class="placeholder-text">Nenhuma assinatura salva</span>
+                    <div class="form-group">
+                        <label for="empresaCNPJ">CNPJ *</label>
+                        <input type="text" id="empresaCNPJ" required placeholder="00.000.000/0001-00">
+                    </div>
+                    <div class="form-group">
+                        <label for="empresaEndereco">Endereço</label>
+                        <input type="text" id="empresaEndereco" placeholder="Rua, Número, Bairro, Cidade">
+                    </div>
+                    <div class="row">
+                        <div class="form-group">
+                            <label for="empresaTelefone">Telefone</label>
+                            <input type="tel" id="empresaTelefone" placeholder="(11) 9999-9999">
                         </div>
-                        <button type="button" id="btnAbrirAssinatura" class="btn-secondary w-100 mt-1"><i class="fa-solid fa-pen-nib"></i> Abrir Painel de Assinatura</button>
+                        <div class="form-group">
+                            <label for="empresaEmail">E-mail</label>
+                            <input type="email" id="empresaEmail" placeholder="empresa@email.com">
+                        </div>
                     </div>
+                    <button type="button" id="btnSalvarEmpresa" class="btn-primary w-100 mt-1"><i class="fa-solid fa-save"></i> Salvar Dados</button>
+                </div>
 
-                    <div class="acoes-finais">
-                        <button type="button" id="btnGerarPdf" class="btn-pdf w-100" disabled><i class="fa-solid fa-file-pdf"></i> Gerar Relatório PDF</button>
-                    </div>
-                </section>
-            </form>
+                <div class="card mt-1">
+                    <h2><i class="fa-solid fa-database"></i> Gerenciamento de Dados</h2>
+                    <button type="button" id="btnExportarDados" class="btn-secondary w-100"><i class="fa-solid fa-download"></i> Exportar Dados</button>
+                    <button type="button" id="btnLimparDados" class="btn-danger w-100 mt-1"><i class="fa-solid fa-trash"></i> Limpar Tudo</button>
+                </div>
+            </div>
         </main>
     </div>
 
-   <!-- ==========================================
-     MODAL: CADASTRO DE CLIENTE E EQUIPAMENTO (CORRIGIDO)
-     ========================================== -->
+   <!-- ==================== MODAL: CADASTRO DE CLIENTE ==================== -->
 <div id="modalGerenciador" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3><i class="fa-solid fa-user-plus"></i> Novo Cliente / Máquina</h3>
+            <h3><i class="fa-solid fa-user-plus"></i> Novo Cliente</h3>
             <button type="button" id="btnFecharGerenciador" class="btn-close">&times;</button>
         </div>
         
-        <!-- O onsubmit="return false;" impede o formulário de recarregar a página e travar o salvamento -->
         <form id="cadClienteForm" onsubmit="event.preventDefault(); return false;">
             
             <h4><i class="fa-solid fa-building"></i> Dados da Empresa</h4>
@@ -250,14 +335,15 @@
             </div>
 
             <div class="modal-actions mt-1">
-                <!-- Certifique-se de que o tipo é BUTTON para não disparar submit incorreto -->
                 <button type="button" id="btnSalvarNovoCliente" class="btn-primary w-100">
-                    <i class="fa-solid fa-floppy-disk"></i> Salvar na Base Offline
+                    <i class="fa-solid fa-floppy-disk"></i> Salvar Cliente + Equipamento
                 </button>
             </div>
         </form>
     </div>
 </div>
+
+    <!-- ==================== MODAL: ASSINATURA ==================== -->
     <div id="modalAssinatura" class="modal">
         <div class="modal-content">
             <h3>Assine na Tela</h3>
@@ -271,27 +357,23 @@
         </div>
     </div>
 
-    <div id="modalPausa" class="modal">
-        <div class="modal-content">
-            <h3>Motivo da Pausa</h3>
-            <div class="form-group">
-                <select id="motivoPausaSelect">
-                    <option value="Intervalo de almoço">Intervalo de almoço</option>
-                    <option value="Aguardando liberação do equipamento">Aguardando liberação do equipamento</option>
-                    <option value="Aguardando peça">Aguardando peça</option>
-                    <option value="Deslocamento até fornecedor">Deslocamento até fornecedor</option>
-                    <option value="Outro">Outro</option>
-                </select>
+    <!-- ==================== MODAL: EDITAR O.S ==================== -->
+    <div id="modalEditarOS" class="modal">
+        <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-edit"></i> Editar O.S</h3>
+                <button type="button" id="btnFecharModalEditar" class="btn-close">&times;</button>
             </div>
-            <div class="form-group" id="campoMotivoOutro" style="display:none;">
-                <label>Especifique o motivo:</label>
-                <input type="text" id="motivoPausaOutroInput" placeholder="Digite o motivo...">
-            </div>
-            <button type="button" id="btnConfirmarPausa" class="btn-success w-100">Confirmar Pausa</button>
+            
+            <form id="formEditarOS" onsubmit="event.preventDefault();">
+                <div id="conteudoEditarOS"></div>
+                <div class="modal-actions mt-1">
+                    <button type="button" id="btnCancelarEdicao" class="btn-danger">Cancelar</button>
+                    <button type="button" id="btnConfirmarEdicao" class="btn-success">Salvar Alterações</button>
+                </div>
+            </form>
         </div>
     </div>
-
-    <div id="pdfTemplate" style="display: none;"></div>
 
     <script src="script.js"></script>
 </body>
