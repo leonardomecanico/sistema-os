@@ -111,20 +111,31 @@
                     </div>
                 </section>
 
-                <section class="card">
-                    <h2><i class="fa-solid fa-stopwatch"></i> 5. Tempo de Atendimento</h2>
-                    <div class="cronometro-container">
-                        <div id="cronometroTempo" class="display-tempo">00:00:00</div>
-                        <div class="acoes-cronometro">
-                            <button type="button" id="btnIniciar" class="btn-primary"><i class="fa-solid fa-play"></i> Iniciar Atendimento</button>
-                            <button type="button" id="btnPausar" class="btn-warning" disabled><i class="fa-solid fa-pause"></i> Pausar</button>
-                        </div>
-                        <div id="historicoTempos" class="historico-tempos">
-                            <span class="text-muted">Aguardando início do serviço...</span>
-                        </div>
-                    </div>
-                </section>
-
+               <section class="card" id="cardTempoManual">
+    <div class="card-header">
+        <div class="card-icon"><i class="fa-solid fa-clock"></i></div>
+        <div>
+            <div class="card-title">5. Horários do Atendimento</div>
+            <div class="card-subtitle">Preenchimento manual (Início, Pausa, Fim)</div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row" style="display: flex; gap: 10px;">
+            <div class="form-group" style="flex:1">
+                <label class="form-label">Início</label>
+                <input type="time" id="timeInicio" class="form-control" oninput="autoSave()">
+            </div>
+            <div class="form-group" style="flex:1">
+                <label class="form-label">Pausa</label>
+                <input type="time" id="timePausa" class="form-control" oninput="autoSave()">
+            </div>
+            <div class="form-group" style="flex:1">
+                <label class="form-label">Fim</label>
+                <input type="time" id="timeFim" class="form-control" oninput="autoSave()">
+            </div>
+        </div>
+    </div>
+</section>
                 <section class="card">
                     <h2><i class="fa-solid fa-clipboard-list"></i> Relatório Técnico</h2>
                     <div class="form-group">
