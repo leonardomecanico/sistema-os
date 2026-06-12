@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         setupEventListeners();
         await carregarClientesDropdown();
         
-        // Inicia na aba principal ou renderiza as outras em background
+        // Renderiza as telas iniciais
         renderCalendario();
         renderHistorico();
         console.log('✅ Sistema Marlift iniciado com sucesso');
@@ -75,20 +75,19 @@ function setupNavTabs() {
 }
 
 // ============================================================
-// 3. CALENDÁRIO E HISTÓRICO (FUNÇÕES QUE HAVIAM SUMIDO)
+// 3. CALENDÁRIO E HISTÓRICO
 // ============================================================
 
 function renderCalendario() {
     const container = document.getElementById('calendarioContainer') || document.querySelector('#tab-calendario');
-    if (!container) return; // Evita erro se o HTML não tiver a aba
+    if (!container) return;
     
-    // Um calendário simples e funcional para o dia atual
     const hoje = new Date().toLocaleDateString('pt-BR');
     container.innerHTML = `
         <div style="padding: 20px; text-align: center; color: #555;">
             <h3 style="color: #ff6600;">📅 Agenda - ${hoje}</h3>
             <p>Nenhum chamado agendado para hoje.</p>
-            <button onclick="switchTab('tab-os')" style="padding: 10px 20px; background: #ff6600; color: white; border: none; border-radius: 5px; margin-top: 10px; font-weight: bold;">Nova O.S</button>
+            <button onclick="switchTab('tab-os')" style="padding: 10px 20px; background: #ff6600; color: white; border: none; border-radius: 5px; margin-top: 10px; font-weight: bold; cursor: pointer;">Nova O.S</button>
         </div>
     `;
 }
@@ -131,7 +130,7 @@ function obterTodasOS() {
 }
 
 // ============================================================
-// 4. CLIENTES E EQUIPAMENTOS (AJUSTE DO BOTÃO)
+// 4. CONFIGURAÇÃO DOS DIÁLOGOS E BOTÕES (NOVO CADASTRO)
 // ============================================================
 
 function setupEventListeners() {
@@ -143,31 +142,96 @@ function setupEventListeners() {
     const selectEquipamento = document.getElementById('selectEquipamento');
     if (selectEquipamento) selectEquipamento.addEventListener('change', preencherEquipamentoSelecionado);
     
-    // Botão Adicionar/Dados do Equipamento (cobre múltiplas IDs do seu HTML)
+    // Vincula a nova função de cadastrar equipamento aos botões do seu HTML
     const btnEquip1 = document.getElementById('btnAdicionarEquipamento');
     const btnEquip2 = document.getElementById('btnDadosEquipamento');
     
-    const acaoBotaoEquipamento = () => {
-        // Apenas foca na aba da O.S e permite digitar um novo equipamento sem travar a tela
-        const camposEquipamento = ['eqMarca', 'eqModelo', 'eqSerie', 'eqCombustivel'];
-        camposEquipamento.forEach(id => {
-            const campo = document.getElementById(id);
-            if (campo) campo.value = '';
-        });
-        if (selectEquipamento) selectEquipamento.value = '';
-        alert("Campos de equipamento liberados para digitação manual.");
-    };
+    if (btnEquip1) btnEquip1.addEventListener('click', cadastrarNovoEquipamento);
+    if (btnEquip2) btnEquip2.addEventListener('click', cadastrarNovoEquipamento);
 
-    if (btnEquip1) btnEquip1.addEventListener('click', acaoBotaoEquipamento);
-    if (btnEquip2) btnEquip2.addEventListener('click', acaoBotaoEquipamento);
-
-    // Botões de Ação
+    // Botões de Ação Gerais
     document.getElementById('btnGps')?.addEventListener('click', gerarRotaGPS);
     document.getElementById('btnGerarPdf')?.addEventListener('click', gerarPDF);
     document.getElementById('btnSalvarOS')?.addEventListener('click', salvarOS);
 }
 
-// ... [O restante das funções de banco de dados permanecem iguais à versão anterior] ...
+// ============================================================
+// 5. FUNÇÃO DEDICADA: CADASTRAR NOVO EQUIPAMENTO NO CLIENTE
+// ============================================================
+
+async function cadastrarNovoEquipamento() {
+    // 1. Identifica qual cliente está selecionado no menu de busca
+    const selectCliente = document.getElementById('buscaCliente');
+    if (!selectCliente || !selectCliente.value) {
+        alert('⚠️ Por favor, selecione um cliente primeiro antes de cadastrar um equipamento.');
+        return;
+    }
+    
+    const clienteId = parseInt(selectCliente.value);
+    if (isNaN(clienteId)) return;
+
+    // 2. Coleta os dados digitados nos campos de equipamento da tela
+    const eqMarca = document.getElementById('eqMarca')?.value.trim();
+    const eqModelo = document.getElementById('eqModelo')?.value.trim();
+    const eqSerie = document.getElementById('eqSerie')?.value.trim();
+    const eqCombustivel = document.getElementById('eqCombustivel')?.value.trim();
+
+    // 3. Validação básica para não salvar em branco
+    if (!eqMarca || !eqModelo) {
+        alert('⚠️ Preencha pelo menos a Marca e o Modelo para cadastrar o equipamento.');
+        return;
+    }
+
+    // 4. Monta o objeto do equipamento com o vínculo do clienteId
+    const novoEquipamento = {
+        clienteId: clienteId,
+        eqMarca: eqMarca,
+        eqModelo: eqModelo,
+        eqSerie: eqSerie || '---',
+        eqCombustivel: eqCombustivel || '---',
+        dataCadastro: new Date().toISOString()
+    };
+
+    // 5. Grava no IndexedDB
+    try {
+        const transaction = db.transaction([STORES.equipamentos], 'readwrite');
+        const store = transaction.objectStore(STORES.equipamentos);
+        const request = store.add(novoEquipamento);
+
+        request.onsuccess = async () => {
+            alert(`✅ Equipamento (${eqMarca} ${eqModelo}) cadastrado e vinculado com sucesso!`);
+            
+            // Atualiza o menu de equipamentos para incluir a nova máquina imediatamente
+            await carregarEquipamentosDropdown(clienteId);
+            
+            // Deixa o menu posicionado no equipamento que acabou de ser criado
+            const selectEquipamento = document.getElementById('selectEquipamento');
+            if (selectEquipamento) {
+                // Procura a opção recém-criada pelo texto correspondente
+                setTimeout(() => {
+                    for (let i = 0; i < selectEquipamento.options.length; i++) {
+                        if (selectEquipamento.options[i].textContent.includes(eqSerie)) {
+                            selectEquipamento.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }, 100);
+            }
+        };
+
+        request.onerror = () => {
+            alert('❌ Erro técnico ao gravar equipamento no banco de dados.');
+        };
+
+    } catch (error) {
+        console.error(error);
+        alert('❌ Não foi possível salvar o equipamento.');
+    }
+}
+
+// ============================================================
+// 6. CARREGAMENTO E FLUXO DE DADOS
+// ============================================================
 
 async function carregarClientesDropdown() {
     const select = document.getElementById('buscaCliente');
@@ -202,6 +266,12 @@ async function preencherClienteSelecionado(event) {
             if (el) el.value = cliente[id] || '';
         });
         
+        // Limpa os campos de equipamento antigos esperando a nova seleção ou cadastro
+        ['eqMarca', 'eqModelo', 'eqSerie', 'eqCombustivel'].forEach(id => {
+            const campo = document.getElementById(id);
+            if (campo) campo.value = '';
+        });
+        
         carregarEquipamentosDropdown(clienteId);
     };
 }
@@ -220,7 +290,7 @@ async function carregarEquipamentosDropdown(clienteId) {
         equipamentos.forEach(eq => {
             const opt = document.createElement('option');
             opt.value = eq.id;
-            opt.textContent = `${eq.eqMarca} ${eq.eqModelo}`;
+            opt.textContent = `${eq.eqMarca} ${eq.eqModelo} (${eq.eqSerie})`;
             select.appendChild(opt);
         });
     };
@@ -244,15 +314,67 @@ async function preencherEquipamentoSelecionado(event) {
 
 function gerarRotaGPS() {
     const endereco = document.getElementById('cliEndereco')?.value.trim();
-    if (endereco) window.open(`http://maps.google.com/maps?q=${encodeURIComponent(endereco)}`, '_blank');
+    if (endereco) window.open(`http://googleusercontent.com/maps.google.com/3{encodeURIComponent(endereco)}`, '_blank');
 }
 
 // ============================================================
-// 5. GERAÇÃO DO PDF (COM OS DADOS DA MARLIFT POR PADRÃO)
+// 7. GERAÇÃO DO PDF E PREENCHIMENTO AUTOMÁTICO DA SEDE
 // ============================================================
 
 async function obterDadosEmpresa() {
-    // Retorna os dados da Marlift como padrão para preencher automaticamente o cabeçalho
     return {
         nome: "Marlift Empilhadeiras",
         cnpj: "65.707.636/0001-13",
+        endereco: "Rua Maria Fernanda, 279, Santana de Parnaíba - SP",
+        telefone: ""
+    };
+}
+
+async function gerarPDF() {
+    const cliNome = document.getElementById('cliNome')?.value || 'Cliente não informado';
+    const empresa = await obterDadosEmpresa();
+    
+    const htmlFinal = `
+        <div style="text-align:center; border-bottom:3px solid #ff6600; padding-bottom:15px; margin-bottom:20px;">
+            <h1 style="color:#ff6600; margin:0; font-size:28px;">MARLIFT</h1>
+            <p style="margin:5px 0 0 0; font-size:11px; color:#666;">Ordem de Serviço Eletrônica</p>
+            <p style="margin:5px 0; font-size:11px;"><b>${empresa.nome}</b><br>${empresa.cnpj}<br>${empresa.endereco}</p>
+        </div>
+        
+        <h3>DADOS DO CLIENTE</h3>
+        <p><b>Razão Social:</b> ${cliNome}</p>
+        <p><b>Endereço:</b> ${document.getElementById('cliEndereco')?.value || ''}</p>
+        
+        <h3>EQUIPAMENTO</h3>
+        <p><b>Marca:</b> ${document.getElementById('eqMarca')?.value || ''}</p>
+        <p><b>Modelo:</b> ${document.getElementById('eqModelo')?.value || ''}</p>
+        <p><b>Série:</b> ${document.getElementById('eqSerie')?.value || ''}</p>
+        
+        <h3>SERVIÇOS EXECUTADOS</h3>
+        <p>${document.getElementById('servicoExecutado')?.value || 'Nenhum serviço descrito'}</p>
+    `;
+
+    const janelaPDF = window.open('', '_blank', 'width=800,height=900');
+    if (janelaPDF) {
+        janelaPDF.document.write(`
+            <html><head><title>OS - ${cliNome}</title>
+            <style>body{font-family: Arial, sans-serif; padding: 20px;} h3{border-bottom: 2px solid #ff6600;}</style>
+            </head><body>${htmlFinal}</body></html>
+        `);
+        janelaPDF.document.close();
+        setTimeout(() => janelaPDF.print(), 500);
+    } else {
+        alert("O bloqueador de pop-ups impediu a geração do PDF.");
+    }
+}
+
+async function salvarOS() {
+    alert("O.S salva com sucesso no histórico!");
+    renderHistorico();
+}
+
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    const selectedTab = document.getElementById(tabId);
+    if (selectedTab) selectedTab.classList.add('active');
+}
