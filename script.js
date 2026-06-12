@@ -1,111 +1,84 @@
-/* ============================================================
-   SISTEMA MARLIFT - CÓDIGO CORRIGIDO
-   ============================================================ */
+let db;
 
-document.addEventListener('DOMContentLoaded', () => {
-    initDB().then(() => {
-        setupEventListeners();
-        carregarClientesDropdown();
-    });
+// 1. INICIALIZAÇÃO DO BANCO COM RELACIONAMENTO
+const request = indexedDB.open("MarliftDB", 1);
+request.onupgradeneeded = (e) => {
+    db = e.target.result;
+    if (!db.objectStoreNames.contains('clientes')) db.createObjectStore('clientes', { keyPath: 'id', autoIncrement: true });
+    if (!db.objectStoreNames.contains('equipamentos')) {
+        const store = db.createObjectStore('equipamentos', { keyPath: 'id', autoIncrement: true });
+        store.createIndex('clienteId', 'clienteId', { unique: false });
+    }
+};
+request.onsuccess = (e) => { db = e.target.result; carregarListaClientes(); };
+
+// 2. BUSCAR EQUIPAMENTOS AO SELECIONAR CLIENTE
+document.getElementById('buscaCliente').addEventListener('change', (e) => {
+    const cliId = e.target.value;
+    if (cliId) carregarEquipamentos(cliId);
 });
 
-// 1. EVENTOS (Onde a mágica da conexão acontece)
-function setupEventListeners() {
-    // Botão de abrir modal
-    document.getElementById('btnAbrirGerenciador')?.addEventListener('click', abrirModalCliente);
-    
-    // Botão de fechar modal
-    document.getElementById('btnFecharGerenciador')?.addEventListener('click', fecharModalCliente);
-    
-    // BOTÃO DE SALVAR (A conexão principal)
-    const btnSalvar = document.getElementById('btnSalvarNovoCliente');
-    if (btnSalvar) {
-        btnSalvar.addEventListener('click', salvarNovoCliente);
-        console.log("✅ Botão salvar vinculado com sucesso");
-    } else {
-        console.error("❌ ERRO: Botão 'btnSalvarNovoCliente' não encontrado no HTML!");
-    }
+async function carregarEquipamentos(clienteId) {
+    const tx = db.transaction('equipamentos', 'readonly');
+    const index = tx.objectStore('equipamentos').index('clienteId');
+    const request = index.getAll(parseInt(clienteId));
+
+    request.onsuccess = () => {
+        const select = document.getElementById('selectEquipamento');
+        select.innerHTML = '<option value="">-- Selecione um Equipamento --</option>';
+        request.result.forEach(eq => {
+            const opt = document.createElement('option');
+            opt.value = eq.id;
+            opt.textContent = `${eq.marca} - ${eq.modelo} (Série: ${eq.serie})`;
+            select.appendChild(opt);
+        });
+    };
 }
 
-// 2. MODAL
-function abrirModalCliente() {
-    const modal = document.getElementById('modalGerenciador');
-    if (modal) modal.style.display = 'flex';
-}
+// 3. SALVAR EQUIPAMENTO NOVO VINCULADO AO CLIENTE
+async function salvarEquipamento() {
+    const clienteId = document.getElementById('buscaCliente').value;
+    if (!clienteId) return alert("Selecione um cliente primeiro!");
 
-function fecharModalCliente() {
-    const modal = document.getElementById('modalGerenciador');
-    if (modal) modal.style.display = 'none';
-    const form = document.getElementById('cadClienteForm');
-    if (form) form.reset();
-}
-
-// 3. SALVAMENTO (Sem validações que travam o código)
-async function salvarNovoCliente() {
-    console.log("Botão clicado! Iniciando salvamento...");
-
-    // Pega os dados dos campos
-    const cliNome = document.getElementById('cadCliNome')?.value;
-    const eqMarca = document.getElementById('cadEqMarca')?.value;
-    const eqModelo = document.getElementById('cadEqModelo')?.value;
-
-    if (!cliNome || !eqMarca || !eqModelo) {
-        alert("⚠️ Por favor, preencha Nome, Marca e Modelo.");
-        return;
-    }
-
-    const novoCliente = {
-        cliNome: cliNome,
-        cliCnpj: document.getElementById('cadCliCnpj')?.value,
-        cliEndereco: document.getElementById('cadCliEndereco')?.value,
-        cliContato: document.getElementById('cadCliContato')?.value,
-        cliTelefone: document.getElementById('cadCliTelefone')?.value,
-        cliEmail: document.getElementById('cadCliEmail')?.value,
-        dataCadastro: new Date().toISOString()
+    const novoEquip = {
+        clienteId: parseInt(clienteId),
+        marca: document.getElementById('cadEqMarca').value,
+        modelo: document.getElementById('cadEqModelo').value,
+        serie: document.getElementById('cadEqSerie').value
     };
 
-    try {
-        const tx = db.transaction(['clientes', 'equipamentos'], 'readwrite');
-        
-        // Salva Cliente
-        const storeCli = tx.objectStore('clientes');
-        const reqCli = storeCli.add(novoCliente);
-
-        reqCli.onsuccess = () => {
-            const clienteId = reqCli.result;
-            // Salva Equipamento
-            const storeEq = tx.objectStore('equipamentos');
-            storeEq.add({
-                clienteId: clienteId,
-                eqMarca: eqMarca,
-                eqModelo: eqModelo,
-                eqCombustivel: document.getElementById('cadEqCombustivel')?.value,
-                eqSerie: document.getElementById('cadEqSerie')?.value,
-                dataCadastro: new Date().toISOString()
-            });
-        };
-
-        tx.oncomplete = () => {
-            alert("✅ Sucesso!");
-            fecharModalCliente();
-            carregarClientesDropdown();
-        };
-
-    } catch (error) {
-        console.error(error);
-        alert("Erro ao salvar no banco.");
-    }
+    const tx = db.transaction('equipamentos', 'readwrite');
+    tx.objectStore('equipamentos').add(novoEquip);
+    tx.oncomplete = () => {
+        alert("Equipamento salvo!");
+        carregarEquipamentos(clienteId);
+    };
 }
 
-// Inicialização básica do DB (para garantir que não pare)
-async function initDB() {
-    return new Promise((resolve) => {
-        const request = indexedDB.open('MarliftDB', 2);
-        request.onsuccess = (e) => { db = e.target.result; resolve(); };
-        request.onupgradeneeded = (e) => {
-            const db = e.target.result;
-            if(!db.objectStoreNames.contains('clientes')) db.createObjectStore('clientes', {keyPath: 'id', autoIncrement: true});
-            if(!db.objectStoreNames.contains('equipamentos')) db.createObjectStore('equipamentos', {keyPath: 'id', autoIncrement: true});
-        };
-    });
+// 4. TRAVA DO PDF
+// Adicione isto ao seu form de OS
+document.getElementById('osForm').addEventListener('change', () => {
+    const btnPdf = document.getElementById('btnGerarPdf');
+    const cliente = document.getElementById('buscaCliente').value;
+    const equip = document.getElementById('selectEquipamento').value;
+    
+    // Supondo que você tenha uma variável booleana 'assinaturaSalva'
+    if (cliente && equip && assinaturaSalva) {
+        btnPdf.disabled = false;
+    }
+});
+
+// FUNÇÃO PARA CARREGAR CLIENTES NO SELECT INICIAL
+async function carregarListaClientes() {
+    const tx = db.transaction('clientes', 'readonly');
+    const request = tx.objectStore('clientes').getAll();
+    request.onsuccess = () => {
+        const select = document.getElementById('buscaCliente');
+        request.result.forEach(cli => {
+            const opt = document.createElement('option');
+            opt.value = cli.id;
+            opt.textContent = cli.cliNome;
+            select.appendChild(opt);
+        });
+    };
 }
