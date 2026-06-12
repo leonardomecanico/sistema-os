@@ -7,6 +7,9 @@ const DB_VERSION = 2;
 const STORES = { clientes: 'clientes', equipamentos: 'equipamentos', ordens: 'ordens', empresa: 'empresa' };
 let db = null;
 
+// Fila de equipamentos em memória para quando for cadastrar um cliente novo
+let equipamentosParaNovoCliente = [];
+
 // ============================================================
 // 1. INICIALIZAÇÃO E BANCO DE DADOS
 // ============================================================
@@ -54,7 +57,7 @@ function initDB() {
 }
 
 // ============================================================
-// 2. NAVEGAÇÃO
+// 2. NAVEGAÇÃO ENTRE ABAS
 // ============================================================
 
 function setupNavTabs() {
@@ -97,151 +100,269 @@ async function renderHistorico() {
     if (!container) return;
     
     try {
-        const ordens = await obterTodasOS();
-        if (ordens.length === 0) {
-            container.innerHTML = '<div style="padding: 20px; text-align: center;">Nenhuma O.S finalizada ainda.</div>';
-            return;
-        }
+        const transaction = db.transaction([STORES.ordens], 'readonly');
+        const store = transaction.objectStore(STORES.ordens);
+        const request = store.getAll();
         
-        let html = '<div style="padding: 10px;">';
-        ordens.reverse().forEach(os => {
-            html += `
-                <div style="border: 1px solid #ddd; border-left: 4px solid #ff6600; padding: 10px; margin-bottom: 10px; border-radius: 4px; background: #fff;">
-                    <strong>${os.cliNome || 'Cliente não informado'}</strong><br>
-                    <small>${os.eqMarca} ${os.eqModelo} - Data: ${new Date(os.data).toLocaleDateString('pt-BR')}</small>
-                </div>
-            `;
-        });
-        html += '</div>';
-        container.innerHTML = html;
+        request.onsuccess = () => {
+            const ordens = request.result || [];
+            if (ordens.length === 0) {
+                container.innerHTML = '<div style="padding: 20px; text-align: center;">Nenhuma O.S finalizada ainda.</div>';
+                return;
+            }
+            
+            let html = '<div style="padding: 10px;">';
+            ordens.reverse().forEach(os => {
+                html += `
+                    <div style="border: 1px solid #ddd; border-left: 4px solid #ff6600; padding: 10px; margin-bottom: 10px; border-radius: 4px; background: #fff;">
+                        <strong>${os.cliNome || 'Cliente não informado'}</strong><br>
+                        <small>${os.eqMarca} ${os.eqModelo} - Data: ${new Date(os.data).toLocaleDateString('pt-BR')}</small>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        };
     } catch (e) {
         console.log("Erro ao carregar histórico", e);
     }
 }
 
-function obterTodasOS() {
-    return new Promise((resolve) => {
-        const transaction = db.transaction([STORES.ordens], 'readonly');
-        const store = transaction.objectStore(STORES.ordens);
-        const request = store.getAll();
-        request.onsuccess = () => resolve(request.result || []);
-        request.onerror = () => resolve([]);
-    });
-}
-
 // ============================================================
-// 4. CONFIGURAÇÃO DOS DIÁLOGOS E BOTÕES (NOVO CADASTRO)
+// 4. EVENTOS GERAIS E CADASTROS
 // ============================================================
 
 function setupEventListeners() {
-    // Clientes
+    // Menu de busca da tela principal
     const buscaCliente = document.getElementById('buscaCliente');
     if (buscaCliente) buscaCliente.addEventListener('change', preencherClienteSelecionado);
     
-    // Equipamentos
     const selectEquipamento = document.getElementById('selectEquipamento');
     if (selectEquipamento) selectEquipamento.addEventListener('change', preencherEquipamentoSelecionado);
     
-    // Vincula a nova função de cadastrar equipamento aos botões do seu HTML
+    // Botões de Equipamento da tela principal (Adicionar/Dados)
     const btnEquip1 = document.getElementById('btnAdicionarEquipamento');
     const btnEquip2 = document.getElementById('btnDadosEquipamento');
-    
-    if (btnEquip1) btnEquip1.addEventListener('click', cadastrarNovoEquipamento);
-    if (btnEquip2) btnEquip2.addEventListener('click', cadastrarNovoEquipamento);
+    if (btnEquip1) btnEquip1.addEventListener('click', cadastrarNovoEquipamentoMain);
+    if (btnEquip2) btnEquip2.addEventListener('click', cadastrarNovoEquipamentoMain);
 
-    // Botões de Ação Gerais
+    // Botões do Modal de Cliente
+    const btnAbrirGerenciador = document.getElementById('btnAbrirGerenciador');
+    const btnFecharGerenciador = document.getElementById('btnFecharGerenciador');
+    const btnSalvarNovoCliente = document.getElementById('btnSalvarNovoCliente');
+    
+    if (btnAbrirGerenciador) btnAbrirGerenciador.addEventListener('click', abrirModalCliente);
+    if (btnFecharGerenciador) btnFecharGerenciador.addEventListener('click', fecharModalCliente);
+    if (btnSalvarNovoCliente) btnSalvarNovoCliente.addEventListener('click', salvarNovoCliente);
+
+    // Ações Gerais
     document.getElementById('btnGps')?.addEventListener('click', gerarRotaGPS);
     document.getElementById('btnGerarPdf')?.addEventListener('click', gerarPDF);
     document.getElementById('btnSalvarOS')?.addEventListener('click', salvarOS);
 }
 
 // ============================================================
-// 5. FUNÇÃO DEDICADA: CADASTRAR NOVO EQUIPAMENTO NO CLIENTE
+// 5. MODAL DE NOVO CLIENTE COM MÚLTIPLOS EQUIPAMENTOS
 // ============================================================
 
-async function cadastrarNovoEquipamento() {
-    // 1. Identifica qual cliente está selecionado no menu de busca
-    const selectCliente = document.getElementById('buscaCliente');
-    if (!selectCliente || !selectCliente.value) {
-        alert('⚠️ Por favor, selecione um cliente primeiro antes de cadastrar um equipamento.');
-        return;
+function abrirModalCliente() {
+    equipamentosParaNovoCliente = []; // Zera a lista sempre que abrir o modal
+    const modal = document.getElementById('modalGerenciador');
+    if (modal) modal.style.display = 'flex';
+
+    // Criação automática do botão de adicionar mais equipamentos (Sem precisar mexer no HTML)
+    const areaEquipamento = document.getElementById('cadEqMarca')?.parentElement;
+    if (areaEquipamento && !document.getElementById('btnInjetadoMaisEquip')) {
+        
+        // Cria botão
+        const btnMaisEquip = document.createElement('button');
+        btnMaisEquip.id = 'btnInjetadoMaisEquip';
+        btnMaisEquip.type = 'button';
+        btnMaisEquip.innerText = '➕ Salvar esta máquina e adicionar outra';
+        btnMaisEquip.style.cssText = 'background-color: #ff6600; color: white; border: none; padding: 10px; border-radius: 4px; margin-top: 15px; width: 100%; cursor: pointer; font-weight: bold;';
+        btnMaisEquip.onclick = guardarEquipamentoNaFila;
+        
+        // Cria texto de contador
+        const txtContador = document.createElement('div');
+        txtContador.id = 'txtContadorEquip';
+        txtContador.style.cssText = 'font-size: 13px; color: #2b2b2b; text-align: center; margin-top: 8px; font-weight: bold;';
+
+        areaEquipamento.appendChild(btnMaisEquip);
+        areaEquipamento.appendChild(txtContador);
     }
     
-    const clienteId = parseInt(selectCliente.value);
-    if (isNaN(clienteId)) return;
+    atualizarContadorModal();
+}
 
-    // 2. Coleta os dados digitados nos campos de equipamento da tela
-    const eqMarca = document.getElementById('eqMarca')?.value.trim();
-    const eqModelo = document.getElementById('eqModelo')?.value.trim();
-    const eqSerie = document.getElementById('eqSerie')?.value.trim();
-    const eqCombustivel = document.getElementById('eqCombustivel')?.value.trim();
+function fecharModalCliente() {
+    const modal = document.getElementById('modalGerenciador');
+    if (modal) modal.style.display = 'none';
+    
+    const form = document.getElementById('cadClienteForm');
+    if (form) form.reset();
+}
 
-    // 3. Validação básica para não salvar em branco
-    if (!eqMarca || !eqModelo) {
-        alert('⚠️ Preencha pelo menos a Marca e o Modelo para cadastrar o equipamento.');
+function guardarEquipamentoNaFila() {
+    const marca = document.getElementById('cadEqMarca')?.value.trim();
+    const modelo = document.getElementById('cadEqModelo')?.value.trim();
+    const serie = document.getElementById('cadEqSerie')?.value.trim();
+    const comb = document.getElementById('cadEqCombustivel')?.value.trim();
+
+    if (!marca || !modelo) {
+        alert('⚠️ Preencha pelo menos a Marca e o Modelo antes de adicionar à lista.');
         return;
     }
 
-    // 4. Monta o objeto do equipamento com o vínculo do clienteId
-    const novoEquipamento = {
-        clienteId: clienteId,
-        eqMarca: eqMarca,
-        eqModelo: eqModelo,
-        eqSerie: eqSerie || '---',
-        eqCombustivel: eqCombustivel || '---',
+    // Salva na memória
+    equipamentosParaNovoCliente.push({
+        eqMarca: marca,
+        eqModelo: modelo,
+        eqSerie: serie || '---',
+        eqCombustivel: comb || '---'
+    });
+
+    // Limpa a tela para ele digitar o próximo
+    document.getElementById('cadEqMarca').value = '';
+    document.getElementById('cadEqModelo').value = '';
+    document.getElementById('cadEqSerie').value = '';
+    document.getElementById('cadEqCombustivel').value = '';
+
+    atualizarContadorModal();
+    alert(`✅ Máquina ${marca} ${modelo} adicionada à lista! Você pode preencher os dados da próxima agora.`);
+}
+
+function atualizarContadorModal() {
+    const contador = document.getElementById('txtContadorEquip');
+    if (contador) {
+        if (equipamentosParaNovoCliente.length > 0) {
+            contador.innerText = `📦 ${equipamentosParaNovoCliente.length} equipamento(s) na fila aguardando salvamento.`;
+        } else {
+            contador.innerText = '';
+        }
+    }
+}
+
+async function salvarNovoCliente() {
+    const cliNome = document.getElementById('cadCliNome')?.value.trim();
+    if (!cliNome) {
+        alert('⚠️ Preencha o nome/razão social do cliente.');
+        return;
+    }
+
+    // Pega o que ficou digitado na tela mas o usuário não clicou no botão "➕"
+    const marcaTela = document.getElementById('cadEqMarca')?.value.trim();
+    const modeloTela = document.getElementById('cadEqModelo')?.value.trim();
+    
+    if (marcaTela && modeloTela) {
+        equipamentosParaNovoCliente.push({
+            eqMarca: marcaTela,
+            eqModelo: modeloTela,
+            eqSerie: document.getElementById('cadEqSerie')?.value.trim() || '---',
+            eqCombustivel: document.getElementById('cadEqCombustivel')?.value.trim() || '---'
+        });
+    }
+
+    if (equipamentosParaNovoCliente.length === 0) {
+        alert('⚠️ Adicione pelo menos um equipamento (Marca e Modelo) para este cliente.');
+        return;
+    }
+
+    // Monta o Cliente
+    const novoCliente = {
+        cliNome: cliNome,
+        cliCnpj: document.getElementById('cadCliCnpj')?.value || '',
+        cliEndereco: document.getElementById('cadCliEndereco')?.value || '',
+        cliContato: document.getElementById('cadCliContato')?.value || '',
+        cliTelefone: document.getElementById('cadCliTelefone')?.value || '',
+        cliEmail: document.getElementById('cadCliEmail')?.value || '',
         dataCadastro: new Date().toISOString()
     };
 
-    // 5. Grava no IndexedDB
     try {
-        const transaction = db.transaction([STORES.equipamentos], 'readwrite');
-        const store = transaction.objectStore(STORES.equipamentos);
-        const request = store.add(novoEquipamento);
+        // 1. Salva Cliente
+        const txCliente = db.transaction([STORES.clientes], 'readwrite');
+        const storeCliente = txCliente.objectStore(STORES.clientes);
+        const reqCliente = storeCliente.add(novoCliente);
 
-        request.onsuccess = async () => {
-            alert(`✅ Equipamento (${eqMarca} ${eqModelo}) cadastrado e vinculado com sucesso!`);
+        reqCliente.onsuccess = () => {
+            const clienteId = reqCliente.result;
+
+            // 2. Salva todos os equipamentos atrelados a ele
+            const txEquip = db.transaction([STORES.equipamentos], 'readwrite');
+            const storeEquip = txEquip.objectStore(STORES.equipamentos);
             
-            // Atualiza o menu de equipamentos para incluir a nova máquina imediatamente
-            await carregarEquipamentosDropdown(clienteId);
-            
-            // Deixa o menu posicionado no equipamento que acabou de ser criado
-            const selectEquipamento = document.getElementById('selectEquipamento');
-            if (selectEquipamento) {
-                // Procura a opção recém-criada pelo texto correspondente
-                setTimeout(() => {
-                    for (let i = 0; i < selectEquipamento.options.length; i++) {
-                        if (selectEquipamento.options[i].textContent.includes(eqSerie)) {
-                            selectEquipamento.selectedIndex = i;
-                            break;
-                        }
-                    }
-                }, 100);
-            }
-        };
+            equipamentosParaNovoCliente.forEach(eq => {
+                eq.clienteId = clienteId;
+                eq.dataCadastro = new Date().toISOString();
+                storeEquip.add(eq);
+            });
 
-        request.onerror = () => {
-            alert('❌ Erro técnico ao gravar equipamento no banco de dados.');
+            txEquip.oncomplete = async () => {
+                alert(`✅ Cliente e ${equipamentosParaNovoCliente.length} equipamento(s) salvos com sucesso!`);
+                fecharModalCliente();
+                await carregarClientesDropdown();
+            };
         };
-
     } catch (error) {
         console.error(error);
-        alert('❌ Não foi possível salvar o equipamento.');
+        alert('Erro ao salvar no banco de dados.');
     }
 }
 
 // ============================================================
-// 6. CARREGAMENTO E FLUXO DE DADOS
+// 6. ADICIONAR EQUIPAMENTO PELA TELA PRINCIPAL
+// ============================================================
+
+async function cadastrarNovoEquipamentoMain() {
+    const selectCliente = document.getElementById('buscaCliente');
+    if (!selectCliente || !selectCliente.value) {
+        alert('⚠️ Selecione um cliente no topo primeiro.');
+        return;
+    }
+    
+    const clienteId = parseInt(selectCliente.value);
+    const eqMarca = document.getElementById('eqMarca')?.value.trim();
+    const eqModelo = document.getElementById('eqModelo')?.value.trim();
+
+    if (!eqMarca || !eqModelo) {
+        alert('⚠️ Preencha a Marca e o Modelo para cadastrar nova máquina.');
+        return;
+    }
+
+    const novoEquip = {
+        clienteId: clienteId,
+        eqMarca: eqMarca,
+        eqModelo: eqModelo,
+        eqSerie: document.getElementById('eqSerie')?.value.trim() || '---',
+        eqCombustivel: document.getElementById('eqCombustivel')?.value.trim() || '---',
+        dataCadastro: new Date().toISOString()
+    };
+
+    try {
+        const tx = db.transaction([STORES.equipamentos], 'readwrite');
+        tx.objectStore(STORES.equipamentos).add(novoEquip);
+        tx.oncomplete = async () => {
+            alert(`✅ Máquina (${eqMarca} ${eqModelo}) vinculada ao cliente atual!`);
+            await carregarEquipamentosDropdown(clienteId);
+        };
+    } catch (error) {
+        alert('Erro ao salvar equipamento.');
+    }
+}
+
+// ============================================================
+// 7. PREENCHIMENTO E FLUXO DE MENUS
 // ============================================================
 
 async function carregarClientesDropdown() {
     const select = document.getElementById('buscaCliente');
     if (!select) return;
     
-    const transaction = db.transaction([STORES.clientes], 'readonly');
-    const request = transaction.objectStore(STORES.clientes).getAll();
+    const tx = db.transaction([STORES.clientes], 'readonly');
+    const req = tx.objectStore(STORES.clientes).getAll();
     
-    request.onsuccess = () => {
-        const clientes = request.result || [];
+    req.onsuccess = () => {
+        const clientes = req.result || [];
         while (select.options.length > 1) select.remove(1);
         clientes.forEach(c => {
             const opt = document.createElement('option');
@@ -256,20 +377,19 @@ async function preencherClienteSelecionado(event) {
     const clienteId = parseInt(event.target.value);
     if (isNaN(clienteId)) return;
     
-    const request = db.transaction([STORES.clientes]).objectStore(STORES.clientes).get(clienteId);
-    request.onsuccess = () => {
-        const cliente = request.result;
-        if (!cliente) return;
+    const req = db.transaction([STORES.clientes]).objectStore(STORES.clientes).get(clienteId);
+    req.onsuccess = () => {
+        const c = req.result;
+        if (!c) return;
         
         ['cliNome', 'cliCnpj', 'cliEndereco', 'cliContato', 'cliTelefone', 'cliEmail'].forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.value = cliente[id] || '';
+            if (el) el.value = c[id] || '';
         });
         
-        // Limpa os campos de equipamento antigos esperando a nova seleção ou cadastro
         ['eqMarca', 'eqModelo', 'eqSerie', 'eqCombustivel'].forEach(id => {
-            const campo = document.getElementById(id);
-            if (campo) campo.value = '';
+            const el = document.getElementById(id);
+            if (el) el.value = '';
         });
         
         carregarEquipamentosDropdown(clienteId);
@@ -280,17 +400,17 @@ async function carregarEquipamentosDropdown(clienteId) {
     const select = document.getElementById('selectEquipamento');
     if (!select) return;
     
-    const transaction = db.transaction([STORES.equipamentos], 'readonly');
-    const index = transaction.objectStore(STORES.equipamentos).index('clienteId');
-    const request = index.getAll(clienteId);
+    const tx = db.transaction([STORES.equipamentos], 'readonly');
+    const index = tx.objectStore(STORES.equipamentos).index('clienteId');
+    const req = index.getAll(clienteId);
     
-    request.onsuccess = () => {
-        const equipamentos = request.result || [];
+    req.onsuccess = () => {
+        const equipamentos = req.result || [];
         while (select.options.length > 1) select.remove(1);
         equipamentos.forEach(eq => {
             const opt = document.createElement('option');
             opt.value = eq.id;
-            opt.textContent = `${eq.eqMarca} ${eq.eqModelo} (${eq.eqSerie})`;
+            opt.textContent = `${eq.eqMarca} ${eq.eqModelo} (Série: ${eq.eqSerie})`;
             select.appendChild(opt);
         });
     };
@@ -300,9 +420,9 @@ async function preencherEquipamentoSelecionado(event) {
     const eqId = parseInt(event.target.value);
     if (isNaN(eqId)) return;
     
-    const request = db.transaction([STORES.equipamentos]).objectStore(STORES.equipamentos).get(eqId);
-    request.onsuccess = () => {
-        const eq = request.result;
+    const req = db.transaction([STORES.equipamentos]).objectStore(STORES.equipamentos).get(eqId);
+    req.onsuccess = () => {
+        const eq = req.result;
         if (!eq) return;
         
         document.getElementById('eqMarca').value = eq.eqMarca || '';
@@ -314,31 +434,21 @@ async function preencherEquipamentoSelecionado(event) {
 
 function gerarRotaGPS() {
     const endereco = document.getElementById('cliEndereco')?.value.trim();
-    if (endereco) window.open(`http://googleusercontent.com/maps.google.com/3{encodeURIComponent(endereco)}`, '_blank');
+    if (endereco) window.open(`http://googleusercontent.com/maps.google.com/4{encodeURIComponent(endereco)}`, '_blank');
 }
 
 // ============================================================
-// 7. GERAÇÃO DO PDF E PREENCHIMENTO AUTOMÁTICO DA SEDE
+// 8. PDF E SALVAMENTO DE OS
 // ============================================================
-
-async function obterDadosEmpresa() {
-    return {
-        nome: "Marlift Empilhadeiras",
-        cnpj: "65.707.636/0001-13",
-        endereco: "Rua Maria Fernanda, 279, Santana de Parnaíba - SP",
-        telefone: ""
-    };
-}
 
 async function gerarPDF() {
     const cliNome = document.getElementById('cliNome')?.value || 'Cliente não informado';
-    const empresa = await obterDadosEmpresa();
     
     const htmlFinal = `
         <div style="text-align:center; border-bottom:3px solid #ff6600; padding-bottom:15px; margin-bottom:20px;">
             <h1 style="color:#ff6600; margin:0; font-size:28px;">MARLIFT</h1>
             <p style="margin:5px 0 0 0; font-size:11px; color:#666;">Ordem de Serviço Eletrônica</p>
-            <p style="margin:5px 0; font-size:11px;"><b>${empresa.nome}</b><br>${empresa.cnpj}<br>${empresa.endereco}</p>
+            <p style="margin:5px 0; font-size:11px;"><b>Marlift Empilhadeiras</b><br>65.707.636/0001-13<br>Rua Maria Fernanda, 279, Santana de Parnaíba - SP</p>
         </div>
         
         <h3>DADOS DO CLIENTE</h3>
@@ -369,12 +479,31 @@ async function gerarPDF() {
 }
 
 async function salvarOS() {
-    alert("O.S salva com sucesso no histórico!");
-    renderHistorico();
+    // Coleta dados vitais para o histórico
+    const osData = {
+        cliNome: document.getElementById('cliNome')?.value || 'Sem Nome',
+        eqMarca: document.getElementById('eqMarca')?.value || '',
+        eqModelo: document.getElementById('eqModelo')?.value || '',
+        data: new Date().toISOString()
+    };
+
+    const tx = db.transaction([STORES.ordens], 'readwrite');
+    tx.objectStore(STORES.ordens).add(osData);
+    
+    tx.oncomplete = () => {
+        alert("✅ O.S salva com sucesso no histórico!");
+        renderHistorico();
+        switchTab('tab-historico'); // Joga o usuário para a aba histórico pra ele ver que salvou
+    };
 }
 
 function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(nav => nav.classList.remove('active'));
+    
     const selectedTab = document.getElementById(tabId);
     if (selectedTab) selectedTab.classList.add('active');
+    
+    const btn = document.querySelector(`[data-tab="${tabId}"]`);
+    if(btn) btn.classList.add('active');
 }
