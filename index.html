@@ -269,6 +269,24 @@
         </main>
     </div>
 
+   <!-- ==================== MODAL: SELEÇÃO DE EQUIPAMENTO ==================== -->
+<div id="modalSelecionarEquipamento" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-truck-pickup"></i> Selecionar Equipamento</h3>
+            <button type="button" id="btnFecharSelecionarEquip" class="btn-close">&times;</button>
+        </div>
+        
+        <div id="listaEquipamentosSelenar"></div>
+        
+        <div class="modal-actions mt-1">
+            <button type="button" id="btnAdicionarNovoEquip" class="btn-primary w-100">
+                <i class="fa-solid fa-plus"></i> Adicionar Novo Equipamento
+            </button>
+        </div>
+    </div>
+</div>
+
    <!-- ==================== MODAL: CADASTRO DE CLIENTE ==================== -->
 <div id="modalGerenciador" class="modal">
     <div class="modal-content">
@@ -346,7 +364,27 @@
     <!-- ==================== MODAL: ASSINATURA ==================== -->
     <div id="modalAssinatura" class="modal">
         <div class="modal-content">
-            <h3>Assine na Tela</h3>
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-signature"></i> Assinatura do Responsável</h3>
+                <button type="button" id="btnFecharAssinatura" class="btn-close">&times;</button>
+            </div>
+
+            <div class="form-group">
+                <label for="assinNome">Nome do Responsável *</label>
+                <input type="text" id="assinNome" required placeholder="Ex: João Silva">
+            </div>
+            <div class="row">
+                <div class="form-group">
+                    <label for="assinCPF">CPF</label>
+                    <input type="text" id="assinCPF" placeholder="000.000.000-00">
+                </div>
+                <div class="form-group">
+                    <label for="assinRG">RG</label>
+                    <input type="text" id="assinRG" placeholder="00.000.000-0">
+                </div>
+            </div>
+
+            <h4 style="margin-top: 15px; margin-bottom: 10px;">Assine na Tela:</h4>
             <div class="canvas-wrapper">
                 <canvas id="canvasAssinatura"></canvas>
             </div>
