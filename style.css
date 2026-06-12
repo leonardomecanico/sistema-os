@@ -18,6 +18,7 @@ body {
     background-color: var(--marlift-gray-light); 
     color: var(--marlift-dark); 
     line-height: 1.6; 
+    padding-bottom: 80px;
 }
 
 .app-container { 
@@ -26,6 +27,10 @@ body {
     padding: 10px; 
 }
 
+/* ============================================================
+   HEADER
+   ============================================================ */
+
 header { 
     text-align: center; 
     margin-bottom: 20px; 
@@ -33,7 +38,11 @@ header {
     background-color: var(--marlift-dark);
     border-bottom: 4px solid var(--marlift-orange); 
     border-radius: 0 0 8px 8px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
+
 .logo-area h1 { 
     color: var(--marlift-orange); 
     margin-bottom: 5px; 
@@ -41,12 +50,71 @@ header {
     letter-spacing: 1.5px; 
     font-weight: 800;
 }
+
 .logo-area span { 
     font-size: 11px; 
     color: #ffffff; 
     font-weight: bold; 
     letter-spacing: 1px;
 }
+
+/* ============================================================
+   NAVEGAÇÃO DE ABAS
+   ============================================================ */
+
+.nav-tabs {
+    display: flex;
+    gap: 5px;
+    margin-top: 10px;
+    overflow-x: auto;
+    padding-bottom: 10px;
+}
+
+.nav-tab {
+    flex: 1;
+    min-width: 100px;
+    padding: 10px;
+    border: none;
+    background-color: #e0e0e0;
+    color: #666;
+    font-size: 12px;
+    font-weight: bold;
+    border-radius: 4px 4px 0 0;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.nav-tab:hover {
+    background-color: #d0d0d0;
+}
+
+.nav-tab.active {
+    background-color: var(--marlift-orange);
+    color: #fff;
+}
+
+/* ============================================================
+   CONTEÚDO DE ABAS
+   ============================================================ */
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* ============================================================
+   CARDS
+   ============================================================ */
 
 .card { 
     background: var(--card-bg); 
@@ -56,20 +124,57 @@ header {
     box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
     border: 1px solid var(--border-color); 
 }
+
 .card h2 { 
     font-size: 15px; 
     margin-bottom: 15px; 
-    border-bottom: 2px solid var(--marlift-gray-light); 
-    padding-bottom: 5px; 
+    border-bottom: 2px solid var(--marlift-orange); 
+    padding-bottom: 8px; 
     color: var(--marlift-dark); 
     text-transform: uppercase;
     font-weight: 700;
 }
 
-.form-group { margin-bottom: 12px; }
-.form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: var(--marlift-dark); }
+.card h3 {
+    font-size: 13px;
+    margin-bottom: 10px;
+    color: var(--marlift-dark);
+}
 
-input[type="text"], input[type="email"], input[type="tel"], select, textarea {
+.card h4 {
+    color: var(--marlift-orange);
+    font-size: 12px;
+    margin: 15px 0 8px 0;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+    font-weight: 700;
+}
+
+/* ============================================================
+   FORMULÁRIOS
+   ============================================================ */
+
+.form-group { 
+    margin-bottom: 12px; 
+}
+
+.form-group label { 
+    display: block; 
+    font-size: 13px; 
+    font-weight: bold; 
+    margin-bottom: 5px; 
+    color: var(--marlift-dark); 
+}
+
+.form-control,
+input[type="text"], 
+input[type="email"], 
+input[type="tel"], 
+input[type="time"],
+input[type="date"],
+select, 
+textarea {
     width: 100%; 
     padding: 10px; 
     border: 1px solid #b3b3b3; 
@@ -77,15 +182,25 @@ input[type="text"], input[type="email"], input[type="tel"], select, textarea {
     font-size: 14px;
     background-color: #ffffff;
     color: var(--marlift-dark);
-}
-input:focus, select:focus, textarea:focus { 
-    border-color: var(--marlift-orange); 
-    outline: none; 
-    box-shadow: 0 0 5px rgba(255, 102, 0, 0.2);
+    font-family: inherit;
 }
 
-.row { display: flex; gap: 10px; }
-.row .form-group { flex: 1; }
+input:focus, 
+select:focus, 
+textarea:focus { 
+    border-color: var(--marlift-orange); 
+    outline: none; 
+    box-shadow: 0 0 5px rgba(255, 102, 0, 0.3);
+}
+
+.row { 
+    display: flex; 
+    gap: 10px; 
+}
+
+.row .form-group { 
+    flex: 1; 
+}
 
 .box-destaque { 
     background: #fff5f0; 
@@ -93,8 +208,20 @@ input:focus, select:focus, textarea:focus {
     border-radius: 6px; 
     border: 1px dashed var(--marlift-orange); 
 }
-.label-destaque { color: var(--marlift-orange) !important; }
-.flex-row { display: flex; gap: 10px; align-items: center; }
+
+.label-destaque { 
+    color: var(--marlift-orange) !important; 
+}
+
+.flex-row { 
+    display: flex; 
+    gap: 10px; 
+    align-items: center; 
+}
+
+/* ============================================================
+   BOTÕES
+   ============================================================ */
 
 button { 
     padding: 12px 15px; 
@@ -103,63 +230,67 @@ button {
     font-size: 14px; 
     font-weight: bold; 
     cursor: pointer; 
-    transition: background 0.2s; 
+    transition: all 0.2s; 
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
 }
+
 button:disabled { 
     background-color: #cccccc !important; 
     border-color: #cccccc !important;
     color: #777777 !important;
     cursor: not-allowed; 
-    opacity: 0.7;
+    opacity: 0.6;
 }
 
-.w-100 { width: 100%; }
-.mt-1 { margin-top: 10px; }
+.w-100 { 
+    width: 100%; 
+}
 
-/* Padronização de Cores dos Botões (Estritamente Laranja e Tons de Cinza) */
+.mt-1 { 
+    margin-top: 10px; 
+}
+
 .btn-primary { 
     background-color: var(--marlift-orange); 
     color: #ffffff; 
 }
+
 .btn-primary:not(:disabled):hover { 
     background-color: #d45500; 
+    transform: translateY(-1px);
 }
 
 .btn-secondary { 
     background-color: var(--marlift-gray-medium); 
     color: #ffffff; 
 }
+
 .btn-secondary:not(:disabled):hover { 
     background-color: #4d4d4d; 
+    transform: translateY(-1px);
 }
 
 .btn-success { 
-    background-color: var(--marlift-orange); 
+    background-color: #4caf50; 
     color: #ffffff; 
-}
-.btn-success:not(:disabled):hover { 
-    background-color: #d45500; 
 }
 
-.btn-warning { 
-    background-color: var(--marlift-dark); 
-    color: #ffffff; 
-    border: 1px solid var(--marlift-gray-medium);
-}
-.btn-warning:not(:disabled):hover { 
-    background-color: #1a1a1a; 
+.btn-success:not(:disabled):hover { 
+    background-color: #45a049; 
+    transform: translateY(-1px);
 }
 
 .btn-danger { 
-    background-color: #4d4d4d; 
+    background-color: #f44336; 
     color: #ffffff; 
 }
+
 .btn-danger:not(:disabled):hover { 
-    background-color: #333333; 
+    background-color: #da190b; 
+    transform: translateY(-1px);
 }
 
 .btn-pdf { 
@@ -167,50 +298,32 @@ button:disabled {
     color: #ffffff; 
     padding: 15px; 
     font-size: 16px; 
-    border: 2px solid var(--marlift-dark);
-}
-.btn-pdf:not(:disabled) {
-    background-color: var(--marlift-orange);
-    border-color: var(--marlift-orange);
 }
 
-.cronometro-container { 
-    background: var(--marlift-dark); 
-    color: #ffffff; 
-    padding: 15px; 
-    border-radius: 6px; 
-    text-align: center; 
+.btn-pdf:not(:disabled) {
+    background-color: var(--marlift-orange);
 }
-.display-tempo { 
-    font-size: 36px; 
-    font-family: monospace; 
-    color: var(--marlift-orange); 
-    font-weight: bold; 
-    margin-bottom: 10px; 
+
+.btn-icon {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-.acoes-cronometro { 
-    display: flex; 
-    gap: 10px; 
-    justify-content: center; 
-    margin-bottom: 10px; 
-}
-.historico-tempos { 
-    text-align: left; 
-    background: #1a1a1a; 
-    padding: 10px; 
-    border-radius: 4px; 
-    font-size: 12px; 
-    max-height: 140px; 
-    overflow-y: auto; 
-    border: 1px solid #444;
-}
-.text-muted { color: #888888; }
+
+/* ============================================================
+   FOTOS/GALERIA
+   ============================================================ */
 
 .galeria-fotos { 
     display: grid; 
     grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); 
     gap: 10px; 
 }
+
 .foto-item { 
     position: relative; 
     width: 100%; 
@@ -220,6 +333,7 @@ button:disabled {
     border-radius: 6px; 
     border: 1px solid var(--border-color); 
 }
+
 .btn-remove-foto { 
     position: absolute; 
     top: 2px; 
@@ -230,12 +344,22 @@ button:disabled {
     border-radius: 50%; 
     width: 24px; 
     height: 24px; 
+    padding: 0;
     display: flex; 
     align-items: center; 
     justify-content: center; 
     font-weight: bold;
     cursor: pointer;
+    font-size: 16px;
 }
+
+.btn-remove-foto:hover {
+    background: var(--marlift-orange);
+}
+
+/* ============================================================
+   ASSINATURA
+   ============================================================ */
 
 .assinatura-salva-box { 
     height: 100px; 
@@ -248,7 +372,15 @@ button:disabled {
     overflow: hidden; 
 }
 
-/* Modais Corporativos */
+.placeholder-text {
+    color: #999;
+    font-size: 12px;
+}
+
+/* ============================================================
+   MODAIS
+   ============================================================ */
+
 .modal { 
     display: none; 
     position: fixed; 
@@ -262,6 +394,11 @@ button:disabled {
     justify-content: center; 
     padding: 15px; 
 }
+
+.modal.active {
+    display: flex;
+}
+
 .modal-content { 
     background: #ffffff; 
     padding: 20px; 
@@ -272,6 +409,7 @@ button:disabled {
     overflow-y: auto; 
     border-top: 5px solid var(--marlift-orange);
 }
+
 .modal-header { 
     display: flex; 
     justify-content: space-between; 
@@ -280,35 +418,194 @@ button:disabled {
     padding-bottom: 10px; 
     margin-bottom: 15px; 
 }
+
 .modal-header h3 { 
     margin: 0; 
     color: var(--marlift-dark); 
     font-size: 18px; 
 }
+
 .btn-close { 
     background: none; 
     border: none; 
     font-size: 26px; 
     color: var(--marlift-gray-medium); 
     cursor: pointer; 
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
+
+.btn-close:hover {
+    color: var(--marlift-dark);
+}
+
 .canvas-wrapper { 
     border: 2px dashed var(--marlift-gray-medium); 
     border-radius: 4px; 
     background: #ffffff; 
     margin-bottom: 15px; 
+    overflow: hidden;
 }
+
+#canvasAssinatura {
+    display: block;
+    width: 100%;
+    cursor: crosshair;
+    background: white;
+}
+
 .modal-actions { 
     display: flex; 
     gap: 10px; 
 }
-.modal-actions button { flex: 1; }
 
-h4 {
-    color: var(--marlift-orange);
-    font-size: 14px;
-    margin: 15px 0 8px 0;
-    text-transform: uppercase;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 2px;
+.modal-actions button { 
+    flex: 1; 
+}
+
+/* ============================================================
+   CALENDÁRIO
+   ============================================================ */
+
+.calendario-container {
+    background: white;
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.dia-calendario {
+    aspect-ratio: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.dia-calendario:hover:not([disabled]) {
+    background: #f0f0f0;
+    border-color: var(--marlift-orange);
+}
+
+/* ============================================================
+   FILTROS HISTÓRICO
+   ============================================================ */
+
+.filtros-historico {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* ============================================================
+   UPLOAD AREA
+   ============================================================ */
+
+.upload-area {
+    padding: 15px;
+    background: #f9f9f9;
+    border: 2px dashed var(--marlift-orange);
+    border-radius: 6px;
+    text-align: center;
+}
+
+/* ============================================================
+   UTILITÁRIOS
+   ============================================================ */
+
+.acoes-finais {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.assinatura-container {
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 6px;
+}
+
+main {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================================
+   RESPONSIVO
+   ============================================================ */
+
+@media (max-width: 480px) {
+    .nav-tabs {
+        flex-wrap: wrap;
+    }
+
+    .nav-tab {
+        min-width: 80px;
+        font-size: 11px;
+        padding: 8px;
+    }
+
+    .row {
+        flex-direction: column;
+    }
+
+    .row .form-group {
+        flex: none;
+    }
+
+    .modal-content {
+        max-width: 95vw;
+    }
+
+    button {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .card {
+        padding: 12px;
+    }
+
+    .card h2 {
+        font-size: 14px;
+    }
+
+    input, select, textarea {
+        font-size: 16px;
+    }
+}
+
+@media print {
+    body {
+        background: white;
+    }
+
+    .nav-tabs,
+    header nav,
+    button,
+    .modal {
+        display: none !important;
+    }
+
+    .card {
+        page-break-inside: avoid;
+    }
 }
