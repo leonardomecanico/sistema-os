@@ -814,26 +814,92 @@ async function gerarPDF() {
         `);
     }
     
-    // Fotos (nova página)
+   // Fotos (nova página)
     if (fotosBuff.length > 0) {
         elementos.push(`<div style="page-break-before:always; margin-top:20px;"></div>`);
         elementos.push(`
             <div style="margin-bottom:15px;">
-                <h3 style="color:#2b2b2b; border-bottom:2px solid #ff6600; padding-bottom:5px; margin-bottom:8px; font-size:13px;">EVIDÊNCIAS FOTOGRÁFICAS (${fotosBuff.length})</h3>
-                <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:10px;">
+                <h3 style="color:#2b2b2b; border-bottom:2px solid #ff6600; padding-bottom:5px; margin-bottom:15px; font-size:13px;">REGISTRO FOTOGRÁFICO</h3>
+                <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">
         `);
-        
-        fotosBuff.forEach((foto) => {
+
+        // Adiciona cada foto em um grid de duas colunas (45% de largura)
+        fotosBuff.forEach(foto => {
             elementos.push(`
-                <div style="page-break-inside:avoid;">
-                    <img src="${foto.data}" style="width:100%; border:1px solid #ddd; border-radius:4px;">
-                </div>
+                <img src="${foto.data}" style="width:45%; max-height:200px; object-fit:cover; border:1px solid #ddd; border-radius:4px; margin-bottom:10px;">
             `);
         });
-        
+
         elementos.push(`</div></div>`);
     }
+
+    // Assinatura Digital do Cliente
+    if (assinaturaSalva) {
+        elementos.push(`
+            <div style="margin-top:40px; text-align:center; page-break-inside: avoid;">
+                <img src="${assinaturaSalva}" style="max-height:100px; max-width: 250px; border-bottom:1px solid #000; padding-bottom:5px; margin-bottom:5px;">
+                <p style="font-size:12px; margin:0; font-weight:bold; color:#2b2b2b;">${cliNome}</p>
+                <p style="font-size:10px; color:#666; margin:0;">Assinatura do Cliente</p>
+            </div>
+        `);
+    }
+
+    // Rodapé da O.S.
+    elementos.push(`
+        <div style="margin-top:50px; text-align:center; font-size:9px; color:#888; border-top:1px solid #eee; padding-top:10px;">
+            <p style="margin:2px 0;">Marlift Empilhadeiras - Sistema de Ordem de Serviço Digital</p>
+            <p style="margin:2px 0;">Documento gerado em: ${new Date().toLocaleString('pt-BR')}</p>
+        </div>
+    `);
+
+    // ============================================================
+    // GERAÇÃO FINAL DO DOCUMENTO (Via Print Window Nativo)
+    // ============================================================
+    const htmlFinal = elementos.join('');
     
+    const janelaPDF = window.open('', '_blank', 'width=800,height=900');
+    if (!janelaPDF) {
+        mostrarErro('Bloqueador de pop-ups impediu a geração do PDF.');
+        return;
+    }
+
+    janelaPDF.document.write(`
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <title>O.S - ${cliNome} - Marlift</title>
+                <meta charset="UTF-8">
+                <style>
+                    body { 
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                        padding: 30px; 
+                        color: #333; 
+                        max-width: 800px; 
+                        margin: 0 auto; 
+                    }
+                    @media print {
+                        body { padding: 0; }
+                        /* Força a quebra de página correta nas fotos */
+                        div { page-break-inside: avoid; }
+                    }
+                </style>
+            </head>
+            <body>
+                ${htmlFinal}
+            </body>
+        </html>
+    `);
+    
+    janelaPDF.document.close();
+    
+    // Aguarda as imagens em Base64 carregarem totalmente no DOM antes de acionar a impressão
+    setTimeout(() => {
+        janelaPDF.focus();
+        janelaPDF.print();
+    }, 800);
+}
+
+// Fim do arquivo 
     // Assinatura (nova página)
     if (assinaturaSalva) {
         elementos.push(`<div style="page-break-before:always; margin-top:20px;"></div>`);
