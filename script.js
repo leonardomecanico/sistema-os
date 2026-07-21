@@ -2500,3 +2500,18 @@ function atualizarDashboard(stats) {
     }
   });
 }
+function exportarExcel() {
+  fetch(scriptUrl + "?action=listarClientes")
+    .then(res => res.json())
+    .then(data => {
+      let csv = "ID,Nome,CNPJ,Telefone,Email\n";
+      data.clientes.forEach(c => {
+        csv += `${c.id},${c.nome},${c.cnpj},${c.telefone},${c.email}\n`;
+      });
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "clientes.csv";
+      link.click();
+    });
+}
