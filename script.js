@@ -2474,3 +2474,29 @@ function carregarClientes() {
     })
     .catch(err => console.error("Erro ao carregar clientes:", err));
 }
+function atualizarDashboard(stats) {
+  const ctx = document.getElementById('osChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Concluídas', 'Pendentes', 'Agendadas'],
+      datasets: [{
+        data: [stats.done, stats.pending, stats.scheduled],
+        backgroundColor: ['#10b981', '#f59e0b', '#3b82f6']
+      }]
+    }
+  });
+}
+function atualizarDashboard(stats) {
+  const ctx = document.getElementById('osChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Concluídas', 'Pendentes', 'Agendadas'],
+      datasets: [{
+        data: [stats.done, stats.pending, stats.scheduled],
+        backgroundColor: ['#10b981', '#f59e0b', '#3b82f6']
+      }]
+    }
+  });
+}
