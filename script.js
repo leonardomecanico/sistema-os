@@ -2449,3 +2449,28 @@ function esc(s) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+const scriptUrl = "https://script.google.com/macros/s/SEU_SCRIPT_ID/exec";
+
+// Carregar clientes automaticamente ao abrir a aba
+function carregarClientes() {
+  fetch(scriptUrl + "?action=listarClientes")
+    .then(res => res.json())
+    .then(data => {
+      const lista = document.getElementById("listaClientes");
+      lista.innerHTML = "";
+      data.clientes.forEach(c => {
+        lista.innerHTML += `
+          <div class="client-item">
+            <div class="client-item-info">
+              <div class="client-name">${c.nome}</div>
+              <div class="client-meta">${c.telefone} | ${c.email}</div>
+            </div>
+            <div class="client-btns">
+              <button class="btn btn-sm btn-outline" onclick="editarCliente('${c.id}')">Editar</button>
+              <button class="btn btn-sm btn-danger" onclick="excluirCliente('${c.id}')">Excluir</button>
+            </div>
+          </div>`;
+      });
+    })
+    .catch(err => console.error("Erro ao carregar clientes:", err));
+}
