@@ -2515,3 +2515,14 @@ function exportarExcel() {
       link.click();
     });
 }
+function validarCliente(cliente) {
+  if (!cliente.nome || cliente.nome.length < 3) {
+    alert("Nome inválido");
+    return false;
+  }
+  if (!/^\d{14}$/.test(cliente.cnpj)) {
+    alert("CNPJ deve ter 14 dígitos");
+    return false;
+  }
+  return true;
+}
